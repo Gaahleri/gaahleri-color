@@ -1,0 +1,92 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+
+}
+
+// Enum for user roles
+enum UserRole {
+  USER
+  ADMIN
+}
+
+// Series model - represents color series/collections from Gaahleri store
+model Series {
+  id          String   @id @default(cuid())
+  name        String   @unique // Series name, e.g., "Professional Series", "Watercolor Series"
+  slug        String?   @unique // URL friendly name
+  description String?  @db.Text // Description of the series
+  colors      Color[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+}
+
+// Color model - individual paint colors from Gaahleri
+model Color {
+  id          String  @id @default(cuid())
+  name        String // Color name, e.g., "Crimson Red"
+  hex         String // Hex color code e.g. #FF0000
+  rgb         String // RGB values e.g., "255,0,0"
+  description String? @db.Text
+  buyLink     String? // Link to purchase this specific color
+
+  seriesId String
+  series   Series @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+
+  userRecords UserRecord[] // Users who saved/liked this color
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([name, seriesId]) // Unique color name within series
+  @@index([seriesId])
+}
+
+// User model - synced with Clerk authentication
+model User {
+  id       String   @id @default(cuid())
+  clerkId  String   @unique // Clerk user ID
+  email    String   @unique
+  name     String?
+  imageUrl String?
+  role     UserRole @default(USER) // USER or ADMIN
+
+  userRecords UserRecord[] // Colors saved by user
+
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([clerkId])
+  @@index([role])
+}
+
+// UserRecord model - tracks colors saved/liked by users
+model UserRecord {
+  id String @id @default(cuid())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [clerkId], onDelete: Cascade)
+
+  colorId String
+  color   Color  @relation(fields: [colorId], references: [id], onDelete: Cascade)
+
+  note      String?  @db.Text // Optional user note
+  isFavorite Boolean @default(false) // Mark as favorite
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, colorId]) // User can only save a color once
+  @@index([userId])
+  @@index([colorId])
+}
+
