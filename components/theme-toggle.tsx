@@ -10,9 +10,12 @@ export function ThemeToggle() {
   React.useEffect(() => {
     // Check system preference or localStorage
     const savedTheme = localStorage.getItem("theme") as "light" | "dark" | null;
-    const systemPreference = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    const systemPreference = window.matchMedia("(prefers-color-scheme: dark)")
+      .matches
+      ? "dark"
+      : "light";
     const initialTheme = savedTheme || systemPreference;
-    
+
     setTheme(initialTheme);
     document.documentElement.classList.toggle("dark", initialTheme === "dark");
   }, []);

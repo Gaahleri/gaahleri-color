@@ -7,7 +7,7 @@ import { redirect } from "next/navigation";
  */
 export async function isAdmin(): Promise<boolean> {
   const { userId } = await auth();
-  
+
   if (!userId) {
     return false;
   }
@@ -27,7 +27,7 @@ export async function isAdmin(): Promise<boolean> {
  */
 export async function requireAdmin() {
   const isUserAdmin = await isAdmin();
-  
+
   if (!isUserAdmin) {
     redirect("/user-home");
   }
@@ -38,11 +38,11 @@ export async function requireAdmin() {
  */
 export async function requireAuth() {
   const { userId } = await auth();
-  
+
   if (!userId) {
     redirect("/");
   }
-  
+
   return userId;
 }
 

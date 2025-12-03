@@ -27,7 +27,10 @@ export default async function DashboardPage() {
               <Heart className="w-4 h-4" />
               <span>Saved Colors</span>
             </TabsTrigger>
-            <TabsTrigger value="history" className="flex items-center space-x-2">
+            <TabsTrigger
+              value="history"
+              className="flex items-center space-x-2"
+            >
               <History className="w-4 h-4" />
               <span>Recent Activity</span>
             </TabsTrigger>
@@ -38,9 +41,13 @@ export default async function DashboardPage() {
               <Palette className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
               <h3 className="text-xl font-semibold mb-2">No Color Mixes Yet</h3>
               <p className="text-muted-foreground mb-6">
-                Start creating color mixes to see them here. Your mixes will be saved automatically.
+                Start creating color mixes to see them here. Your mixes will be
+                saved automatically.
               </p>
-              <a href="/make-color" className="text-primary hover:underline font-medium">
+              <a
+                href="/make-color"
+                className="text-primary hover:underline font-medium"
+              >
                 Create Your First Mix →
               </a>
             </div>
@@ -49,11 +56,16 @@ export default async function DashboardPage() {
           <TabsContent value="saved" className="space-y-4">
             <div className="bg-card rounded-lg p-8 text-center">
               <Heart className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
-              <h3 className="text-xl font-semibold mb-2">No Saved Colors Yet</h3>
+              <h3 className="text-xl font-semibold mb-2">
+                No Saved Colors Yet
+              </h3>
               <p className="text-muted-foreground mb-6">
                 Browse Gaahleri colors and save your favorites to see them here.
               </p>
-              <a href="/make-color" className="text-primary hover:underline font-medium">
+              <a
+                href="/make-color"
+                className="text-primary hover:underline font-medium"
+              >
                 Browse Colors →
               </a>
             </div>
@@ -64,7 +76,8 @@ export default async function DashboardPage() {
               <History className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
               <h3 className="text-xl font-semibold mb-2">No Activity Yet</h3>
               <p className="text-muted-foreground">
-                Your recent activity will appear here once you start using the app.
+                Your recent activity will appear here once you start using the
+                app.
               </p>
             </div>
           </TabsContent>
@@ -78,15 +91,23 @@ export default async function DashboardPage() {
           <ul className="space-y-2 text-blue-800 dark:text-blue-200 text-sm">
             <li className="flex items-start">
               <span className="mr-2">•</span>
-              <span><strong>My Mixes:</strong> All color combinations you&apos;ve created</span>
+              <span>
+                <strong>My Mixes:</strong> All color combinations you&apos;ve
+                created
+              </span>
             </li>
             <li className="flex items-start">
               <span className="mr-2">•</span>
-              <span><strong>Saved Colors:</strong> Individual Gaahleri colors you&apos;ve saved</span>
+              <span>
+                <strong>Saved Colors:</strong> Individual Gaahleri colors
+                you&apos;ve saved
+              </span>
             </li>
             <li className="flex items-start">
               <span className="mr-2">•</span>
-              <span><strong>Recent Activity:</strong> Your latest actions in the app</span>
+              <span>
+                <strong>Recent Activity:</strong> Your latest actions in the app
+              </span>
             </li>
             <li className="flex items-start">
               <span className="mr-2">•</span>

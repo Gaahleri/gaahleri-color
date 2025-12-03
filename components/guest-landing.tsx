@@ -31,8 +31,9 @@ export default function GuestLanding() {
           {/* Value Proposition */}
           <div className="max-w-2xl mx-auto space-y-6">
             <p className="text-lg text-slate-700 dark:text-slate-300">
-              Discover what colors you can create with paints from Gaahleri&apos;s professional collection.
-              Mix, experiment, and save your perfect color combinations.
+              Discover what colors you can create with paints from
+              Gaahleri&apos;s professional collection. Mix, experiment, and save
+              your perfect color combinations.
             </p>
           </div>
 
@@ -77,16 +78,17 @@ export default function GuestLanding() {
           </h2>
           <div className="max-w-3xl mx-auto space-y-6 text-slate-700 dark:text-slate-300">
             <p className="text-lg leading-relaxed">
-              Gaahleri is a premium paint manufacturer specializing in professional-grade 
-              colors for artists, designers, and creative professionals. Our carefully 
-              curated color collections offer unmatched quality and consistency.
+              Gaahleri is a premium paint manufacturer specializing in
+              professional-grade colors for artists, designers, and creative
+              professionals. Our carefully curated color collections offer
+              unmatched quality and consistency.
             </p>
             <p className="text-lg leading-relaxed">
-              With decades of expertise in color science, we&apos;ve created this digital 
-              tool to help you explore the endless possibilities of color mixing using 
-              our paint collections. Whether you&apos;re an experienced artist or just starting 
-              your creative journey, our color mixer helps you achieve the perfect shade 
-              every time.
+              With decades of expertise in color science, we&apos;ve created
+              this digital tool to help you explore the endless possibilities of
+              color mixing using our paint collections. Whether you&apos;re an
+              experienced artist or just starting your creative journey, our
+              color mixer helps you achieve the perfect shade every time.
             </p>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-8">
               <StatCard value="500+" label="Colors" />
@@ -99,9 +101,7 @@ export default function GuestLanding() {
 
         {/* How It Works */}
         <div className="mt-24">
-          <h2 className="text-3xl font-bold text-center mb-12">
-            How It Works
-          </h2>
+          <h2 className="text-3xl font-bold text-center mb-12">How It Works</h2>
           <div className="grid md:grid-cols-3 gap-8">
             <StepCard
               number="1"
@@ -123,9 +123,7 @@ export default function GuestLanding() {
 
         {/* Final CTA */}
         <div className="mt-24 text-center">
-          <h2 className="text-3xl font-bold mb-6">
-            Ready to Start Creating?
-          </h2>
+          <h2 className="text-3xl font-bold mb-6">Ready to Start Creating?</h2>
           <SignUpButton mode="modal">
             <Button size="lg" className="text-lg px-12">
               Join Gaahleri Color Studio
@@ -137,9 +135,13 @@ export default function GuestLanding() {
   );
 }
 
-function FeatureCard({ icon, title, description }: { 
-  icon: React.ReactNode; 
-  title: string; 
+function FeatureCard({
+  icon,
+  title,
+  description,
+}: {
+  icon: React.ReactNode;
+  title: string;
   description: string;
 }) {
   return (
@@ -164,9 +166,13 @@ function StatCard({ value, label }: { value: string; label: string }) {
   );
 }
 
-function StepCard({ number, title, description }: { 
-  number: string; 
-  title: string; 
+function StepCard({
+  number,
+  title,
+  description,
+}: {
+  number: string;
+  title: string;
   description: string;
 }) {
   return (

@@ -2,13 +2,12 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-  provider = "prisma-client"
-  output   = "../lib/generated/prisma"
+  provider = "prisma-client-js"
 }
-
+//忽略这个错误，因为我把prisma降到了prisma6
 datasource db {
   provider = "postgresql"
-
+  url      = env("DATABASE_URL")
 }
 
 // Enum for user roles
@@ -21,12 +20,11 @@ enum UserRole {
 model Series {
   id          String   @id @default(cuid())
   name        String   @unique // Series name, e.g., "Professional Series", "Watercolor Series"
-  slug        String?   @unique // URL friendly name
+  slug        String?  @unique // URL friendly name
   description String?  @db.Text // Description of the series
   colors      Color[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-
 }
 
 // Color model - individual paint colors from Gaahleri
@@ -41,7 +39,8 @@ model Color {
   seriesId String
   series   Series @relation(fields: [seriesId], references: [id], onDelete: Cascade)
 
-  userRecords UserRecord[] // Users who saved/liked this color
+  userRecords      UserRecord[] // Users who saved/liked this color
+  recipeIngredients RecipeIngredient[] // This color used in recipes
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -57,10 +56,11 @@ model User {
   email    String   @unique
   name     String?
   imageUrl String?
+  country  String?  // User's country (optional)
   role     UserRole @default(USER) // USER or ADMIN
 
   userRecords UserRecord[] // Colors saved by user
-
+  recipes     Recipe[] // Recipes created by user
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -79,14 +79,53 @@ model UserRecord {
   colorId String
   color   Color  @relation(fields: [colorId], references: [id], onDelete: Cascade)
 
-  note      String?  @db.Text // Optional user note
-  isFavorite Boolean @default(false) // Mark as favorite
+  note       String?  @db.Text // Optional user note
+  isFavorite Boolean  @default(false) // Mark as favorite
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@unique([userId, colorId]) // User can only save a color once
   @@index([userId])
+  @@index([colorId])
+  @@index([createdAt]) // For querying recent additions
+}
+
+// Recipe model - stores user's color mixing recipes
+model Recipe {
+  id          String  @id @default(cuid())
+  name        String // Recipe name, e.g., "My Pink"
+  description String? @db.Text
+  resultHex   String // The resulting mixed color hex
+  resultRgb   String // The resulting mixed color rgb
+
+  userId String
+  user   User   @relation(fields: [userId], references: [clerkId], onDelete: Cascade)
+
+  ingredients RecipeIngredient[] // Colors and their proportions
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+// RecipeIngredient model - individual colors used in a recipe with proportions
+model RecipeIngredient {
+  id String @id @default(cuid())
+
+  recipeId String
+  recipe   Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+
+  colorId String
+  color   Color  @relation(fields: [colorId], references: [id], onDelete: Cascade)
+
+  parts Int // Number of parts/份数, e.g., 3 parts red, 1 part white
+
+  createdAt DateTime @default(now())
+
+  @@unique([recipeId, colorId]) // Same color can't be added twice to one recipe
+  @@index([recipeId])
   @@index([colorId])
 }
 

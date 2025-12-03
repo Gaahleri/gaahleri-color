@@ -2,7 +2,15 @@ import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Palette, Droplet, BarChart3, Sparkles, ArrowRight } from "lucide-react";
+import {
+  Palette,
+  Droplet,
+  BarChart3,
+  Sparkles,
+  ArrowRight,
+} from "lucide-react";
+import CountryInput from "@/components/country-input";
+import ColorCollection from "@/components/color-collection";
 
 export default async function UserHomePage() {
   const { userId } = await auth();
@@ -15,13 +23,23 @@ export default async function UserHomePage() {
     <div className="min-h-screen bg-linear-to-b from-background to-secondary/20">
       <div className="container mx-auto px-4 py-12">
         {/* Welcome Section */}
-        <div className="text-center space-y-4 mb-16">
+        <div className="text-center space-y-4 mb-12">
           <h1 className="text-4xl md:text-6xl font-bold bg-linear-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
             Welcome to Your Color Studio
           </h1>
           <p className="text-xl text-muted-foreground">
             Start creating beautiful color combinations with Gaahleri paints
           </p>
+        </div>
+
+        {/* Profile Section */}
+        <div className="max-w-2xl mx-auto mb-12">
+          <CountryInput />
+        </div>
+
+        {/* Color Collection */}
+        <div className="max-w-4xl mx-auto mb-12">
+          <ColorCollection />
         </div>
 
         {/* Quick Actions Grid */}
@@ -122,12 +140,12 @@ function QuickActionCard({
   return (
     <Link href={href}>
       <div className="group relative h-full bg-card rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden">
-        <div className={`absolute inset-0 bg-linear-to-br ${gradient} opacity-0 group-hover:opacity-10 transition-opacity`} />
+        <div
+          className={`absolute inset-0 bg-linear-to-br ${gradient} opacity-0 group-hover:opacity-10 transition-opacity`}
+        />
         <div className="relative p-8 space-y-4">
           <div className="flex items-center space-x-4">
-            <div className="p-3 bg-secondary rounded-lg">
-              {icon}
-            </div>
+            <div className="p-3 bg-secondary rounded-lg">{icon}</div>
             <h3 className="text-2xl font-bold">{title}</h3>
           </div>
           <p className="text-muted-foreground">{description}</p>
@@ -152,9 +170,7 @@ function FeatureItem({
 }) {
   return (
     <div className="flex flex-col items-center text-center space-y-3">
-      <div className="p-3 bg-secondary rounded-full">
-        {icon}
-      </div>
+      <div className="p-3 bg-secondary rounded-full">{icon}</div>
       <h3 className="text-lg font-semibold">{title}</h3>
       <p className="text-sm text-muted-foreground">{description}</p>
     </div>

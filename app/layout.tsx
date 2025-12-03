@@ -16,7 +16,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Gaahleri Color Studio - Professional Paint Color Mixing",
-  description: "Discover what colors you can create with Gaahleri professional paints. Mix, experiment, and save your perfect color combinations.",
+  description:
+    "Discover what colors you can create with Gaahleri professional paints. Mix, experiment, and save your perfect color combinations.",
 };
 
 export default function RootLayout({

@@ -13,4 +13,3 @@ export default async function HomePage() {
   // Show guest landing page for non-authenticated users
   return <GuestLanding />;
 }
-

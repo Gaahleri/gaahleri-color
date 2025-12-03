@@ -5,7 +5,13 @@ import { usePathname } from "next/navigation";
 import { SignedIn, SignedOut, UserButton, SignInButton } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { Palette, Home, Droplet, BarChart3, LayoutDashboard } from "lucide-react";
+import {
+  Palette,
+  Home,
+  Droplet,
+  BarChart3,
+  LayoutDashboard,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function Navbar() {
@@ -32,8 +38,9 @@ export default function Navbar() {
           <div className="flex items-center space-x-1 flex-1">
             {navItems.map((item) => {
               const Icon = item.icon;
-              const isActive = pathname === item.href || pathname?.startsWith(item.href + "/");
-              
+              const isActive =
+                pathname === item.href || pathname?.startsWith(item.href + "/");
+
               return (
                 <Link key={item.href} href={item.href}>
                   <Button
@@ -55,14 +62,14 @@ export default function Navbar() {
         {/* Right side - Theme toggle and User actions */}
         <div className="flex items-center space-x-4 ml-auto">
           <ThemeToggle />
-          
+
           <SignedIn>
-            <UserButton 
+            <UserButton
               afterSignOutUrl="/"
               appearance={{
                 elements: {
-                  avatarBox: "h-9 w-9"
-                }
+                  avatarBox: "h-9 w-9",
+                },
               }}
             />
           </SignedIn>

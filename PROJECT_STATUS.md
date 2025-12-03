@@ -18,6 +18,7 @@ Gaahleri Color Studio 是一个专业的颜料调色模拟网站，帮助用户�
 - **ColorMixIngredient（调色成分）**: 调色中使用的各个颜色及比例
 
 **重要特性：**
+
 - 添加了 `UserRole` 枚举（USER, ADMIN）
 - 完整的关系设置和级联删除
 - 优化的索引提高查询性能
@@ -26,12 +27,14 @@ Gaahleri Color Studio 是一个专业的颜料调色模拟网站，帮助用户�
 ### 2. 用户界面组件
 
 #### Guest Landing Page（访客页面）
+
 - ✅ 精美的欢迎页面
 - ✅ 介绍 Gaahleri 品牌和功能
 - ✅ 注册/登录引导
 - ✅ 功能展示和使用流程说明
 
 #### Navigation Bar（导航栏）
+
 - ✅ 响应式设计
 - ✅ 包含所有必要链接：Home, Create Your Color, Analyse Your Color, Dashboard
 - ✅ 明暗主题切换
@@ -39,11 +42,13 @@ Gaahleri Color Studio 是一个专业的颜料调色模拟网站，帮助用户�
 - ✅ 只在登录后显示导航链接
 
 #### User Home Page（用户主页）
+
 - ✅ 登录用户的欢迎页面
 - ✅ 快速操作卡片
 - ✅ 功能介绍和使用指南
 
 #### Dashboard（用户仪表盘）
+
 - ✅ 我的调色记录
 - ✅ 保存的颜色
 - ✅ 最近活动
@@ -51,6 +56,7 @@ Gaahleri Color Studio 是一个专业的颜料调色模拟网站，帮助用户�
 - ✅ 仅显示用户自己的数据
 
 #### Admin Page（管理员页面）
+
 - ✅ 仅管理员可访问
 - ✅ 系列管理入口
 - ✅ 颜色管理入口
@@ -59,18 +65,22 @@ Gaahleri Color Studio 是一个专业的颜料调色模拟网站，帮助用户�
 ### 3. 权限和安全
 
 #### Clerk 集成
+
 - ✅ 完整的 Clerk 认证集成
 - ✅ 基于角色的访问控制（RBAC）
 - ✅ 服务器端权限验证
 
 #### 权限保护函数
+
 创建了以下工具函数（`lib/auth.ts`）：
+
 - `isAdmin()`: 检查用户是否为管理员
 - `requireAdmin()`: 要求管理员权限，否则重定向
 - `requireAuth()`: 要求登录，否则重定向
 - `getCurrentUserId()`: 获取当前用户 ID
 
 #### 路由保护
+
 - ✅ `/admin/*` - 仅管理员可访问
 - ✅ `/user-home` - 需要登录
 - ✅ `/dashboard` - 需要登录，仅显示用户自己的数据
@@ -163,6 +173,7 @@ npm run dev
 ```
 
 测试流程：
+
 1. 访问 `http://localhost:3000` - 应该看到 Guest Landing Page
 2. 注册/登录
 3. 应该自动重定向到 `/user-home`
@@ -173,11 +184,13 @@ npm run dev
 ### 4. 后续开发任务
 
 #### Admin 管理功能
+
 - [ ] 创建 Series 管理页面（CRUD）
 - [ ] 创建 Color 管理页面（CRUD）
 - [ ] 添加图片上传功能
 
 #### 调色功能
+
 - [ ] 实现调色选择器
 - [ ] 颜色混合算法（RGB/HSL）
 - [ ] 比例调整滑块
@@ -185,12 +198,14 @@ npm run dev
 - [ ] 保存调色记录
 
 #### 分析功能
+
 - [ ] 显示用户的调色历史
 - [ ] 颜色成分分解
 - [ ] 统计图表
 - [ ] 导出功能
 
 #### 优化
+
 - [ ] 添加 loading 状态
 - [ ] 错误处理
 - [ ] 表单验证
@@ -216,7 +231,7 @@ npm run dev
 
 ```typescript
 // 检查管理员权限（服务器端）
-import { isAdmin, requireAdmin } from '@/lib/auth';
+import { isAdmin, requireAdmin } from "@/lib/auth";
 
 // 方法 1: 检查并返回布尔值
 const userIsAdmin = await isAdmin();
@@ -228,6 +243,7 @@ await requireAdmin();
 ### 数据访问控制
 
 - 管理员可以：
+
   - 访问 `/admin` 页面
   - 增删改 Series 和 Color
   - 查看所有用户数据（如需要）
@@ -240,14 +256,18 @@ await requireAdmin();
 ### 数据库 Schema 说明
 
 #### ColorMix 表
+
 记录用户的调色实验：
+
 - 可以命名和描述
 - 记录最终结果的颜色（hex 和 rgb）
 - 如果结果匹配某个 Gaahleri 颜色，会关联该颜色
 - 可选择公开或私有
 
 #### ColorMixIngredient 表
+
 记录调色中使用的各个颜色：
+
 - 关联到 ColorMix
 - 关联到具体的 Color
 - 记录使用比例（1-100）
@@ -255,6 +275,7 @@ await requireAdmin();
 ## 📞 需要帮助？
 
 如有任何问题，请查看：
+
 1. `CLERK_ADMIN_SETUP.md` - Clerk 设置说明
 2. Prisma 文档: https://www.prisma.io/docs
 3. Clerk 文档: https://clerk.com/docs
