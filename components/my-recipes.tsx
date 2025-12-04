@@ -1,6 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import useSWR from "swr";
+import { fetcher } from "@/lib/fetcher";
 import {
   Card,
   CardContent,
@@ -52,33 +54,22 @@ interface Recipe {
 }
 
 export default function MyRecipes() {
-  const [recipes, setRecipes] = useState<Recipe[]>([]);
-  const [loading, setLoading] = useState(true);
+  // 使用 SWR 进行数据缓存
+  const { data: recipes = [], isLoading: loading, mutate: mutateRecipes } = useSWR<Recipe[]>(
+    "/api/recipes",
+    fetcher,
+    {
+      revalidateOnFocus: false,
+      dedupingInterval: 30000,
+    }
+  );
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [selectedRecipeId, setSelectedRecipeId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
 
-  useEffect(() => {
-    fetchRecipes();
-  }, []);
-
-  const fetchRecipes = async () => {
-    try {
-      const res = await fetch("/api/recipes");
-      if (res.ok) {
-        const data = await res.json();
-        setRecipes(data);
-      }
-    } catch (error) {
-      console.error("Failed to fetch recipes:", error);
-      toast.error("Failed to load recipes");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleUpdate = (updatedRecipe: Recipe) => {
-    setRecipes(recipes.map((r) => (r.id === updatedRecipe.id ? updatedRecipe : r)));
+    // 乐观更新
+    mutateRecipes(recipes.map((r) => (r.id === updatedRecipe.id ? updatedRecipe : r)), false);
   };
 
   const handleDeleteClick = (recipeId: string) => {
@@ -94,7 +85,8 @@ export default function MyRecipes() {
         method: "DELETE",
       });
       if (res.ok) {
-        setRecipes(recipes.filter((r) => r.id !== selectedRecipeId));
+        // 乐观更新
+        mutateRecipes(recipes.filter((r) => r.id !== selectedRecipeId), false);
         setIsDeleteOpen(false);
         setSelectedRecipeId(null);
         toast.success("Recipe deleted successfully");

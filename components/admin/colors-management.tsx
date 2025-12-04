@@ -1,6 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import useSWR from "swr";
+import { fetcher } from "@/lib/fetcher";
 import {
   Table,
   TableBody,
@@ -70,9 +72,24 @@ interface Color {
 }
 
 export default function ColorsManagement() {
-  const [colors, setColors] = useState<Color[]>([]);
-  const [series, setSeries] = useState<Series[]>([]);
-  const [loading, setLoading] = useState(true);
+  // 使用 SWR 进行数据缓存
+  const { data: colors = [], isLoading: colorsLoading, mutate: mutateColors } = useSWR<Color[]>(
+    "/api/admin/colors",
+    fetcher,
+    {
+      revalidateOnFocus: false,
+      dedupingInterval: 30000,
+    }
+  );
+  const { data: series = [], isLoading: seriesLoading } = useSWR<Series[]>(
+    "/api/series",
+    fetcher,
+    {
+      revalidateOnFocus: false,
+      dedupingInterval: 60000,
+    }
+  );
+  const loading = colorsLoading || seriesLoading;
   const [searchTerm, setSearchTerm] = useState("");
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -92,52 +109,13 @@ export default function ColorsManagement() {
     seriesId: "",
   });
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
-    try {
-      const [colorsRes, seriesRes] = await Promise.all([
-        fetch("/api/admin/colors"),
-        fetch("/api/admin/series"),
-      ]);
-
-      if (colorsRes.ok) {
-        const colorsData = await colorsRes.json();
-        setColors(colorsData);
-      }
-      
-      // Fallback or check if seriesRes is ok. 
-      // If /api/series doesn't exist, we might need to find where it is.
-      // Assuming /api/admin/series for now based on typical structure, or I will check file system.
-      if (seriesRes.ok) {
-         const seriesData = await seriesRes.json();
-         setSeries(seriesData);
-      } else {
-          // Try /api/series as originally in code, maybe I missed it or it's dynamic
-          const retrySeries = await fetch("/api/series");
-          if (retrySeries.ok) {
-              const seriesData = await retrySeries.json();
-              setSeries(seriesData);
-          }
-      }
-
-    } catch (error) {
-      console.error("Failed to fetch data:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleAdd = async () => {
     setSubmitting(true);
     try {
       const res = await createColor(formData);
       if (res.success && res.color) {
-        // We need to fetch again or manually construct the color object with series
-        // For simplicity, let's fetch data again to get the relation
-        await fetchData();
+        // 使用 SWR mutate 刷新数据
+        await mutateColors();
         setIsAddOpen(false);
         resetForm();
         toast.success("Color created successfully");
@@ -159,7 +137,7 @@ export default function ColorsManagement() {
       const res = await updateColor(selectedColor.id, formData);
 
       if (res.success) {
-        await fetchData();
+        await mutateColors();
         setIsEditOpen(false);
         setSelectedColor(null);
         resetForm();
@@ -182,7 +160,8 @@ export default function ColorsManagement() {
       const res = await deleteColor(selectedColor.id);
 
       if (res.success) {
-        setColors(colors.filter((c) => c.id !== selectedColor.id));
+        // 乐观更新
+        mutateColors(colors.filter((c) => c.id !== selectedColor.id), false);
         setIsDeleteOpen(false);
         setSelectedColor(null);
         toast.success("Color deleted successfully");

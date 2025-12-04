@@ -42,18 +42,20 @@ export default function Navbar() {
                 pathname === item.href || pathname?.startsWith(item.href + "/");
 
               return (
-                <Link key={item.href} href={item.href}>
-                  <Button
-                    variant={isActive ? "secondary" : "ghost"}
-                    className={cn(
-                      "flex items-center space-x-2",
-                      isActive && "bg-secondary"
-                    )}
-                  >
+                <Button
+                  key={item.href}
+                  variant={isActive ? "secondary" : "ghost"}
+                  className={cn(
+                    "flex items-center space-x-2",
+                    isActive && "bg-secondary"
+                  )}
+                  asChild
+                >
+                  <Link href={item.href}>
                     <Icon className="h-4 w-4" />
                     <span className="hidden md:inline">{item.label}</span>
-                  </Button>
-                </Link>
+                  </Link>
+                </Button>
               );
             })}
           </div>

@@ -13,7 +13,12 @@ export async function GET() {
       orderBy: [{ series: { name: "asc" } }, { name: "asc" }],
     });
 
-    return NextResponse.json(colors);
+    return NextResponse.json(colors, {
+      headers: {
+        // Cache for 5 minutes on the client, revalidate every 30 seconds on the server
+        'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=300',
+      },
+    });
   } catch (error) {
     console.error("Error fetching colors:", error);
     return NextResponse.json(

@@ -1,6 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import useSWR from "swr";
+import { fetcher } from "@/lib/fetcher";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -61,48 +63,30 @@ interface UserRecord {
 }
 
 export default function ColorCollection() {
-  const [colors, setColors] = useState<Color[]>([]);
-  const [records, setRecords] = useState<UserRecord[]>([]);
+  // 使用 SWR 进行数据缓存
+  const { data: colors = [], isLoading: colorsLoading } = useSWR<Color[]>(
+    "/api/colors",
+    fetcher,
+    {
+      revalidateOnFocus: false,
+      dedupingInterval: 30000,
+    }
+  );
+  const { data: records = [], isLoading: recordsLoading, mutate: mutateRecords } = useSWR<UserRecord[]>(
+    "/api/user/colors",
+    fetcher,
+    {
+      revalidateOnFocus: false,
+      dedupingInterval: 30000,
+    }
+  );
+
+  const loading = colorsLoading || recordsLoading;
   const [selectedColorId, setSelectedColorId] = useState<string>("");
-  const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<UserRecord | null>(null);
   const [deleting, setDeleting] = useState(false);
-
-  useEffect(() => {
-    fetchData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const fetchData = async () => {
-    await Promise.all([fetchColors(), fetchRecords()]);
-    setLoading(false);
-  };
-
-  const fetchColors = async () => {
-    try {
-      const res = await fetch("/api/colors");
-      if (res.ok) {
-        const data = await res.json();
-        setColors(data);
-      }
-    } catch (error) {
-      console.error("Failed to fetch colors:", error);
-    }
-  };
-
-  const fetchRecords = async () => {
-    try {
-      const res = await fetch("/api/user/colors");
-      if (res.ok) {
-        const data = await res.json();
-        setRecords(data);
-      }
-    } catch (error) {
-      console.error("Failed to fetch records:", error);
-    }
-  };
 
   const addColor = async () => {
     if (!selectedColorId) return;
@@ -115,7 +99,8 @@ export default function ColorCollection() {
       });
       if (res.ok) {
         const newRecord = await res.json();
-        setRecords([newRecord, ...records]);
+        // 乐观更新
+        mutateRecords([newRecord, ...records], false);
         setSelectedColorId("");
       }
     } catch (error) {
@@ -134,7 +119,8 @@ export default function ColorCollection() {
       });
       if (res.ok) {
         const updated = await res.json();
-        setRecords(records.map((r) => (r.id === record.id ? updated : r)));
+        // 乐观更新
+        mutateRecords(records.map((r) => (r.id === record.id ? updated : r)), false);
       }
     } catch (error) {
       console.error("Failed to toggle favorite:", error);
@@ -149,7 +135,8 @@ export default function ColorCollection() {
         method: "DELETE",
       });
       if (res.ok) {
-        setRecords(records.filter((r) => r.id !== selectedRecord.id));
+        // 乐观更新
+        mutateRecords(records.filter((r) => r.id !== selectedRecord.id), false);
         setIsDeleteOpen(false);
         setSelectedRecord(null);
       }

@@ -13,7 +13,11 @@ export async function GET() {
       },
       orderBy: { createdAt: "desc" },
     });
-    return NextResponse.json(series);
+    return NextResponse.json(series, {
+      headers: {
+        'Cache-Control': 'private, s-maxage=10, stale-while-revalidate=60',
+      },
+    });
   } catch (error) {
     console.error("Error fetching series:", error);
     return NextResponse.json(

@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import useSWR from "swr";
+import { fetcher } from "@/lib/fetcher";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
@@ -40,30 +42,25 @@ const COUNTRIES = [
 ];
 
 export default function CountryInput() {
-  const [profile, setProfile] = useState<UserProfile | null>(null);
+  // 使用 SWR 进行数据缓存
+  const { data: profile, isLoading: loading, mutate: mutateProfile } = useSWR<UserProfile>(
+    "/api/user/profile",
+    fetcher,
+    {
+      revalidateOnFocus: false,
+      dedupingInterval: 60000,
+    }
+  );
   const [country, setCountry] = useState("");
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
+  // 当 profile 加载完成后，设置 country 值
   useEffect(() => {
-    fetchProfile();
-  }, []);
-
-  const fetchProfile = async () => {
-    try {
-      const res = await fetch("/api/user/profile");
-      if (res.ok) {
-        const data = await res.json();
-        setProfile(data);
-        setCountry(data.country || "");
-      }
-    } catch (error) {
-      console.error("Failed to fetch profile:", error);
-    } finally {
-      setLoading(false);
+    if (profile) {
+      setCountry(profile.country || "");
     }
-  };
+  }, [profile]);
 
   const handleSave = async () => {
     setSaving(true);
@@ -76,7 +73,7 @@ export default function CountryInput() {
       });
       if (res.ok) {
         const data = await res.json();
-        setProfile(data);
+        mutateProfile(data, false);
         setSaved(true);
         setTimeout(() => setSaved(false), 3000);
       }

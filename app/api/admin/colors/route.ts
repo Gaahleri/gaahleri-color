@@ -18,7 +18,11 @@ export async function GET(req: Request) {
       orderBy: { createdAt: "desc" },
     });
 
-    return NextResponse.json(colors);
+    return NextResponse.json(colors, {
+      headers: {
+        'Cache-Control': 'private, s-maxage=10, stale-while-revalidate=60',
+      },
+    });
   } catch (error) {
     console.error("Error fetching colors:", error);
     return NextResponse.json(

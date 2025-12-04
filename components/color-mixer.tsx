@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import useSWR from "swr";
+import { fetcher } from "@/lib/fetcher";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -74,15 +76,40 @@ interface MixIngredient {
 const ITEMS_PER_PAGE = 24;
 
 export default function ColorMixer() {
-  const [colors, setColors] = useState<Color[]>([]);
-  const [series, setSeries] = useState<Series[]>([]);
-  const [savedColorIds, setSavedColorIds] = useState<Set<string>>(new Set());
+  // 使用 SWR 进行数据缓存
+  const { data: colors = [], isLoading: colorsLoading } = useSWR<Color[]>(
+    "/api/colors",
+    fetcher,
+    {
+      revalidateOnFocus: false,
+      dedupingInterval: 30000,
+    }
+  );
+  const { data: series = [], isLoading: seriesLoading } = useSWR<Series[]>(
+    "/api/series",
+    fetcher,
+    {
+      revalidateOnFocus: false,
+      dedupingInterval: 60000,
+    }
+  );
+  const { data: userRecords = [], mutate: mutateRecords } = useSWR<{ colorId: string }[]>(
+    "/api/user/colors",
+    fetcher,
+    {
+      revalidateOnFocus: false,
+      dedupingInterval: 30000,
+    }
+  );
+
+  const loading = colorsLoading || seriesLoading;
+  const savedColorIds = new Set(userRecords.map((r) => r.colorId));
+
   const [ingredients, setIngredients] = useState<MixIngredient[]>([]);
   const [mixedColor, setMixedColor] = useState<{
     hex: string;
     rgb: string;
   } | null>(null);
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [isSaveOpen, setIsSaveOpen] = useState(false);
   const [recipeName, setRecipeName] = useState("");
@@ -92,47 +119,6 @@ export default function ColorMixer() {
   const [source, setSource] = useState<"catalog" | "library">("catalog");
   const [selectedSeries, setSelectedSeries] = useState<string>("all");
   const [currentPage, setCurrentPage] = useState(1);
-
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
-    try {
-      const [colorsRes, recordsRes, seriesRes] = await Promise.all([
-        fetch("/api/colors"),
-        fetch("/api/user/colors"),
-        fetch("/api/series"), // Assuming public series API exists or use admin one if public
-      ]);
-
-      if (colorsRes.ok) {
-        const data = await colorsRes.json();
-        setColors(data);
-      }
-
-      if (recordsRes.ok) {
-        const records = await recordsRes.json();
-        setSavedColorIds(new Set(records.map((r: any) => r.colorId)));
-      }
-
-      if (seriesRes.ok) {
-        const data = await seriesRes.json();
-        setSeries(data);
-      } else {
-         // Fallback if public series API is missing, try admin or just extract from colors
-         const adminSeriesRes = await fetch("/api/admin/series");
-         if (adminSeriesRes.ok) {
-             const data = await adminSeriesRes.json();
-             setSeries(data);
-         }
-      }
-    } catch (error) {
-      console.error("Failed to fetch data:", error);
-      toast.error("Failed to load data");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   // Helper to convert hex to RGB array
   const hexToRgb = (hex: string): [number, number, number] => {
@@ -225,7 +211,8 @@ export default function ColorMixer() {
       });
 
       if (res.ok) {
-        setSavedColorIds(new Set([...savedColorIds, colorId]));
+        // 刷新用户记录数据
+        mutateRecords();
         toast.success("Color saved to library");
       }
     } catch (error) {

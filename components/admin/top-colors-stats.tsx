@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import useSWR from "swr";
+import { fetcher } from "@/lib/fetcher";
 import {
   Card,
   CardContent,
@@ -24,26 +25,15 @@ interface TopColor {
 }
 
 export default function TopColorsStats() {
-  const [topColors, setTopColors] = useState<TopColor[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchTopColors();
-  }, []);
-
-  const fetchTopColors = async () => {
-    try {
-      const res = await fetch("/api/admin/stats/top-colors");
-      if (res.ok) {
-        const data = await res.json();
-        setTopColors(data);
-      }
-    } catch (error) {
-      console.error("Failed to fetch top colors:", error);
-    } finally {
-      setLoading(false);
+  // 使用 SWR 进行数据缓存
+  const { data: topColors = [], isLoading: loading } = useSWR<TopColor[]>(
+    "/api/admin/stats/top-colors",
+    fetcher,
+    {
+      revalidateOnFocus: false,
+      dedupingInterval: 60000, // 统计数据 60 秒内不重复请求
     }
-  };
+  );
 
   if (loading) {
     return (

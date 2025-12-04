@@ -35,7 +35,11 @@ export async function GET() {
       });
     }
 
-    return NextResponse.json(user);
+    return NextResponse.json(user, {
+      headers: {
+        'Cache-Control': 'private, max-age=60, stale-while-revalidate=120',
+      },
+    });
   } catch (error) {
     console.error("Error fetching user profile:", error);
     return NextResponse.json(

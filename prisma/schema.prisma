@@ -26,6 +26,8 @@ model Series {
   colors      Color[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  @@index([name]) // For ordering by name
 }
 
 // Color model - individual paint colors from Gaahleri
@@ -49,6 +51,8 @@ model Color {
 
   @@unique([name, seriesId]) // Unique color name within series
   @@index([seriesId])
+  @@index([updatedAt]) // For sorting by most recently updated
+  @@index([hex]) // 索引hex值加速颜色查询
 }
 
 // User model - synced with Clerk authentication
@@ -91,6 +95,7 @@ model UserRecord {
   @@index([userId])
   @@index([colorId])
   @@index([createdAt]) // For querying recent additions
+  @@index([userId, isFavorite]) // 复合索引加速收藏查询
 }
 
 // Recipe model - stores user's color mixing recipes
@@ -110,6 +115,7 @@ model Recipe {
   updatedAt DateTime @updatedAt
 
   @@index([userId])
+  @@index([userId, createdAt]) // 复合索引加速用户配方时间排序查询
 }
 
 // RecipeIngredient model - individual colors used in a recipe with proportions

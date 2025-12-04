@@ -21,7 +21,11 @@ export async function GET() {
       orderBy: { createdAt: "desc" },
     });
 
-    return NextResponse.json(records);
+    return NextResponse.json(records, {
+      headers: {
+        'Cache-Control': 'private, max-age=30, stale-while-revalidate=60',
+      },
+    });
   } catch (error) {
     console.error("Error fetching user records:", error);
     return NextResponse.json(

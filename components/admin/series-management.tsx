@@ -1,6 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import useSWR from "swr";
+import { fetcher } from "@/lib/fetcher";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -53,8 +55,14 @@ interface Series {
 }
 
 export default function SeriesManagement() {
-  const [series, setSeries] = useState<Series[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: series = [], isLoading: loading, mutate } = useSWR<Series[]>(
+    "/api/admin/series",
+    fetcher,
+    {
+      revalidateOnFocus: false,
+      dedupingInterval: 30000, // 30秒内不重复请求
+    }
+  );
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
@@ -65,22 +73,6 @@ export default function SeriesManagement() {
     description: "",
   });
   const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
-    fetchSeries();
-  }, []);
-
-  const fetchSeries = async () => {
-    try {
-      const res = await fetch("/api/admin/series");
-      const data = await res.json();
-      setSeries(data);
-    } catch (error) {
-      console.error("Failed to fetch series:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleCreate = async () => {
     setSaving(true);
@@ -93,7 +85,7 @@ export default function SeriesManagement() {
       if (res.ok) {
         setIsCreateOpen(false);
         setFormData({ name: "", slug: "", description: "" });
-        fetchSeries();
+        mutate(); // 使用 SWR 的 mutate 重新验证数据
       }
     } catch (error) {
       console.error("Failed to create series:", error);
@@ -115,7 +107,7 @@ export default function SeriesManagement() {
         setIsEditOpen(false);
         setSelectedSeries(null);
         setFormData({ name: "", slug: "", description: "" });
-        fetchSeries();
+        mutate(); // 使用 SWR 的 mutate 重新验证数据
       }
     } catch (error) {
       console.error("Failed to update series:", error);
@@ -134,7 +126,7 @@ export default function SeriesManagement() {
       if (res.ok) {
         setIsDeleteOpen(false);
         setSelectedSeries(null);
-        fetchSeries();
+        mutate(); // 使用 SWR 的 mutate 重新验证数据
       }
     } catch (error) {
       console.error("Failed to delete series:", error);
