@@ -8,11 +8,11 @@
 
 ## 优化措施总览
 
-| 优化类型 | 优化内容 | 预期效果 |
-|---------|---------|---------|
-| API 缓存 | 添加 Cache-Control 响应头 | 减少重复请求，利用浏览器缓存 |
+| 优化类型   | 优化内容                        | 预期效果                       |
+| ---------- | ------------------------------- | ------------------------------ |
+| API 缓存   | 添加 Cache-Control 响应头       | 减少重复请求，利用浏览器缓存   |
 | 客户端缓存 | 使用 SWR 替代 useEffect + fetch | 智能缓存、去重请求、后台重验证 |
-| 数据库索引 | 添加复合索引优化查询 | 加速数据库查询速度 |
+| 数据库索引 | 添加复合索引优化查询            | 加速数据库查询速度             |
 
 ---
 
@@ -20,16 +20,16 @@
 
 ### 已优化的 API 路由
 
-| API 路由 | Cache-Control 设置 | 说明 |
-|---------|-------------------|------|
-| `/api/colors` | `public, s-maxage=30, stale-while-revalidate=300` | 公共颜色列表，30秒缓存，5分钟过期后仍可用 |
-| `/api/series` | `public, s-maxage=60, stale-while-revalidate=300` | 系列列表，60秒缓存 |
-| `/api/admin/series` | `private, max-age=30, stale-while-revalidate=60` | 管理员系列数据 |
-| `/api/admin/colors` | `private, s-maxage=10, stale-while-revalidate=60` | 管理员颜色数据 |
-| `/api/admin/stats/top-colors` | `private, max-age=60, stale-while-revalidate=300` | 统计数据，60秒缓存 |
-| `/api/user/colors` | `private, max-age=30, stale-while-revalidate=60` | 用户收藏颜色 |
-| `/api/user/profile` | `private, max-age=60, stale-while-revalidate=120` | 用户配置文件 |
-| `/api/recipes` | `private, max-age=30, stale-while-revalidate=60` | 用户配方 |
+| API 路由                      | Cache-Control 设置                                | 说明                                        |
+| ----------------------------- | ------------------------------------------------- | ------------------------------------------- |
+| `/api/colors`                 | `public, s-maxage=30, stale-while-revalidate=300` | 公共颜色列表，30 秒缓存，5 分钟过期后仍可用 |
+| `/api/series`                 | `public, s-maxage=60, stale-while-revalidate=300` | 系列列表，60 秒缓存                         |
+| `/api/admin/series`           | `private, max-age=30, stale-while-revalidate=60`  | 管理员系列数据                              |
+| `/api/admin/colors`           | `private, s-maxage=10, stale-while-revalidate=60` | 管理员颜色数据                              |
+| `/api/admin/stats/top-colors` | `private, max-age=60, stale-while-revalidate=300` | 统计数据，60 秒缓存                         |
+| `/api/user/colors`            | `private, max-age=30, stale-while-revalidate=60`  | 用户收藏颜色                                |
+| `/api/user/profile`           | `private, max-age=60, stale-while-revalidate=120` | 用户配置文件                                |
+| `/api/recipes`                | `private, max-age=30, stale-while-revalidate=60`  | 用户配方                                    |
 
 ### Cache-Control 参数说明
 
@@ -50,27 +50,23 @@ npm install swr
 
 ### 已优化的组件
 
-| 组件 | 缓存策略 | dedupingInterval |
-|-----|---------|-----------------|
-| `SeriesManagement` | revalidateOnFocus: false | 30秒 |
-| `ColorsManagement` | revalidateOnFocus: false | 30秒 (colors), 60秒 (series) |
-| `ColorMixer` | revalidateOnFocus: false | 30秒 (colors, records), 60秒 (series) |
-| `ColorCollection` | revalidateOnFocus: false | 30秒 |
-| `TopColorsStats` | revalidateOnFocus: false | 60秒 |
-| `MyRecipes` | revalidateOnFocus: false | 30秒 |
-| `CountryInput` | revalidateOnFocus: false | 60秒 |
+| 组件               | 缓存策略                 | dedupingInterval                        |
+| ------------------ | ------------------------ | --------------------------------------- |
+| `SeriesManagement` | revalidateOnFocus: false | 30 秒                                   |
+| `ColorsManagement` | revalidateOnFocus: false | 30 秒 (colors), 60 秒 (series)          |
+| `ColorMixer`       | revalidateOnFocus: false | 30 秒 (colors, records), 60 秒 (series) |
+| `ColorCollection`  | revalidateOnFocus: false | 30 秒                                   |
+| `TopColorsStats`   | revalidateOnFocus: false | 60 秒                                   |
+| `MyRecipes`        | revalidateOnFocus: false | 30 秒                                   |
+| `CountryInput`     | revalidateOnFocus: false | 60 秒                                   |
 
 ### SWR 配置说明
 
 ```tsx
-const { data, isLoading, mutate } = useSWR<DataType>(
-  "/api/endpoint",
-  fetcher,
-  {
-    revalidateOnFocus: false,    // 切换标签页时不自动重新请求
-    dedupingInterval: 30000,     // 30秒内相同请求自动去重
-  }
-);
+const { data, isLoading, mutate } = useSWR<DataType>("/api/endpoint", fetcher, {
+  revalidateOnFocus: false, // 切换标签页时不自动重新请求
+  dedupingInterval: 30000, // 30秒内相同请求自动去重
+});
 ```
 
 ### SWR 优势
@@ -89,7 +85,7 @@ const { data, isLoading, mutate } = useSWR<DataType>(
 export const fetcher = async (url: string) => {
   const res = await fetch(url);
   if (!res.ok) {
-    throw new Error('An error occurred while fetching the data.');
+    throw new Error("An error occurred while fetching the data.");
   }
   return res.json();
 };
@@ -101,11 +97,11 @@ export const fetcher = async (url: string) => {
 
 ### 新增索引
 
-| 模型 | 索引 | 用途 |
-|-----|------|------|
-| `Color` | `@@index([hex])` | 加速按颜色值查询 |
-| `UserRecord` | `@@index([userId, isFavorite])` | 加速收藏颜色查询 |
-| `Recipe` | `@@index([userId, createdAt])` | 加速用户配方时间排序 |
+| 模型         | 索引                            | 用途                 |
+| ------------ | ------------------------------- | -------------------- |
+| `Color`      | `@@index([hex])`                | 加速按颜色值查询     |
+| `UserRecord` | `@@index([userId, isFavorite])` | 加速收藏颜色查询     |
+| `Recipe`     | `@@index([userId, createdAt])`  | 加速用户配方时间排序 |
 
 ### 应用索引
 
@@ -179,8 +175,8 @@ npx prisma migrate dev --name add_performance_indexes
 
 ## 更新日志
 
-| 日期 | 更新内容 |
-|-----|---------|
+| 日期       | 更新内容                                     |
+| ---------- | -------------------------------------------- |
 | 2024-12-04 | 初始性能优化：API 缓存、SWR 集成、数据库索引 |
 
 ---

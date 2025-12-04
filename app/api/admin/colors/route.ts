@@ -20,7 +20,7 @@ export async function GET(req: Request) {
 
     return NextResponse.json(colors, {
       headers: {
-        'Cache-Control': 'private, s-maxage=10, stale-while-revalidate=60',
+        "Cache-Control": "private, s-maxage=10, stale-while-revalidate=60",
       },
     });
   } catch (error) {
@@ -38,7 +38,8 @@ export async function POST(req: Request) {
     await requireAdmin();
 
     const body = await req.json();
-    const { name, hex, rgb, description, buyLink, badge, status, seriesId } = body;
+    const { name, hex, rgb, description, buyLink, badge, status, seriesId } =
+      body;
 
     if (!name || !hex || !rgb || !seriesId) {
       return NextResponse.json(

@@ -55,14 +55,14 @@ interface Series {
 }
 
 export default function SeriesManagement() {
-  const { data: series = [], isLoading: loading, mutate } = useSWR<Series[]>(
-    "/api/admin/series",
-    fetcher,
-    {
-      revalidateOnFocus: false,
-      dedupingInterval: 30000, // 30秒内不重复请求
-    }
-  );
+  const {
+    data: series = [],
+    isLoading: loading,
+    mutate,
+  } = useSWR<Series[]>("/api/admin/series", fetcher, {
+    revalidateOnFocus: false,
+    dedupingInterval: 30000, // 30秒内不重复请求
+  });
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);

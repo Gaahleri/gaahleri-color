@@ -72,14 +72,14 @@ export default function ColorCollection() {
       dedupingInterval: 30000,
     }
   );
-  const { data: records = [], isLoading: recordsLoading, mutate: mutateRecords } = useSWR<UserRecord[]>(
-    "/api/user/colors",
-    fetcher,
-    {
-      revalidateOnFocus: false,
-      dedupingInterval: 30000,
-    }
-  );
+  const {
+    data: records = [],
+    isLoading: recordsLoading,
+    mutate: mutateRecords,
+  } = useSWR<UserRecord[]>("/api/user/colors", fetcher, {
+    revalidateOnFocus: false,
+    dedupingInterval: 30000,
+  });
 
   const loading = colorsLoading || recordsLoading;
   const [selectedColorId, setSelectedColorId] = useState<string>("");
@@ -120,7 +120,10 @@ export default function ColorCollection() {
       if (res.ok) {
         const updated = await res.json();
         // 乐观更新
-        mutateRecords(records.map((r) => (r.id === record.id ? updated : r)), false);
+        mutateRecords(
+          records.map((r) => (r.id === record.id ? updated : r)),
+          false
+        );
       }
     } catch (error) {
       console.error("Failed to toggle favorite:", error);
@@ -136,7 +139,10 @@ export default function ColorCollection() {
       });
       if (res.ok) {
         // 乐观更新
-        mutateRecords(records.filter((r) => r.id !== selectedRecord.id), false);
+        mutateRecords(
+          records.filter((r) => r.id !== selectedRecord.id),
+          false
+        );
         setIsDeleteOpen(false);
         setSelectedRecord(null);
       }
@@ -252,7 +258,7 @@ export default function ColorCollection() {
                   }}
                   showActions={true}
                 />
-                
+
                 {/* Additional Actions Below Card */}
                 <div className="flex items-center justify-between px-2">
                   {record.color.buyLink ? (

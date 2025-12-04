@@ -43,14 +43,14 @@ const COUNTRIES = [
 
 export default function CountryInput() {
   // 使用 SWR 进行数据缓存
-  const { data: profile, isLoading: loading, mutate: mutateProfile } = useSWR<UserProfile>(
-    "/api/user/profile",
-    fetcher,
-    {
-      revalidateOnFocus: false,
-      dedupingInterval: 60000,
-    }
-  );
+  const {
+    data: profile,
+    isLoading: loading,
+    mutate: mutateProfile,
+  } = useSWR<UserProfile>("/api/user/profile", fetcher, {
+    revalidateOnFocus: false,
+    dedupingInterval: 60000,
+  });
   const [country, setCountry] = useState("");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);

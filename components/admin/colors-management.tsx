@@ -73,14 +73,14 @@ interface Color {
 
 export default function ColorsManagement() {
   // 使用 SWR 进行数据缓存
-  const { data: colors = [], isLoading: colorsLoading, mutate: mutateColors } = useSWR<Color[]>(
-    "/api/admin/colors",
-    fetcher,
-    {
-      revalidateOnFocus: false,
-      dedupingInterval: 30000,
-    }
-  );
+  const {
+    data: colors = [],
+    isLoading: colorsLoading,
+    mutate: mutateColors,
+  } = useSWR<Color[]>("/api/admin/colors", fetcher, {
+    revalidateOnFocus: false,
+    dedupingInterval: 30000,
+  });
   const { data: series = [], isLoading: seriesLoading } = useSWR<Series[]>(
     "/api/series",
     fetcher,
@@ -161,7 +161,10 @@ export default function ColorsManagement() {
 
       if (res.success) {
         // 乐观更新
-        mutateColors(colors.filter((c) => c.id !== selectedColor.id), false);
+        mutateColors(
+          colors.filter((c) => c.id !== selectedColor.id),
+          false
+        );
         setIsDeleteOpen(false);
         setSelectedColor(null);
         toast.success("Color deleted successfully");
@@ -378,7 +381,9 @@ export default function ColorsManagement() {
                   submitting
                 }
               >
-                {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {submitting && (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                )}
                 Add Color
               </Button>
             </DialogFooter>
@@ -602,8 +607,9 @@ export default function ColorsManagement() {
           <AlertDialogHeader>
             <DialogTitle>Are you sure?</DialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the color
-              &quot;{selectedColor?.name}&quot; and remove it from our servers.
+              This action cannot be undone. This will permanently delete the
+              color &quot;{selectedColor?.name}&quot; and remove it from our
+              servers.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

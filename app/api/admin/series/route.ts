@@ -15,7 +15,7 @@ export async function GET() {
     });
     return NextResponse.json(series, {
       headers: {
-        'Cache-Control': 'private, s-maxage=10, stale-while-revalidate=60',
+        "Cache-Control": "private, s-maxage=10, stale-while-revalidate=60",
       },
     });
   } catch (error) {

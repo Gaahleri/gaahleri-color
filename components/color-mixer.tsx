@@ -93,14 +93,12 @@ export default function ColorMixer() {
       dedupingInterval: 60000,
     }
   );
-  const { data: userRecords = [], mutate: mutateRecords } = useSWR<{ colorId: string }[]>(
-    "/api/user/colors",
-    fetcher,
-    {
-      revalidateOnFocus: false,
-      dedupingInterval: 30000,
-    }
-  );
+  const { data: userRecords = [], mutate: mutateRecords } = useSWR<
+    { colorId: string }[]
+  >("/api/user/colors", fetcher, {
+    revalidateOnFocus: false,
+    dedupingInterval: 30000,
+  });
 
   const loading = colorsLoading || seriesLoading;
   const savedColorIds = new Set(userRecords.map((r) => r.colorId));
@@ -276,7 +274,8 @@ export default function ColorMixer() {
 
     // Sort by updatedAt desc
     return filtered.sort(
-      (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+      (a, b) =>
+        new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
     );
   };
 
@@ -301,9 +300,9 @@ export default function ColorMixer() {
   }
 
   return (
-    <div className="grid lg:grid-cols-12 gap-6 h-[calc(100vh-12rem)]">
+    <div className="flex flex-col lg:grid lg:grid-cols-12 gap-6 lg:h-[calc(100vh-12rem)]">
       {/* Left: Color Selection */}
-      <Card className="lg:col-span-7 flex flex-col overflow-hidden h-full">
+      <Card className="lg:col-span-7 flex flex-col overflow-hidden lg:h-full">
         <CardHeader className="shrink-0 space-y-4 pb-4">
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2">
@@ -329,13 +328,10 @@ export default function ColorMixer() {
               </Button>
             </div>
           </div>
-          
+
           <div className="flex items-center gap-4">
             <div className="flex-1">
-              <Select
-                value={selectedSeries}
-                onValueChange={setSelectedSeries}
-              >
+              <Select value={selectedSeries} onValueChange={setSelectedSeries}>
                 <SelectTrigger>
                   <SelectValue placeholder="Filter by Series" />
                 </SelectTrigger>
@@ -354,10 +350,10 @@ export default function ColorMixer() {
             </div>
           </div>
         </CardHeader>
-        
-        <CardContent className="flex-1 overflow-y-auto min-h-0">
+
+        <CardContent className="flex-1 overflow-y-auto min-h-0 max-h-[50vh] lg:max-h-none">
           {paginatedColors.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center text-muted-foreground">
+            <div className="h-full flex flex-col items-center justify-center text-muted-foreground py-8">
               <p>No colors found matching your filters.</p>
             </div>
           ) : (
@@ -413,13 +409,13 @@ export default function ColorMixer() {
       </Card>
 
       {/* Right: Mixing Area */}
-      <div className="lg:col-span-5 flex flex-col gap-6 h-full overflow-hidden">
+      <div className="lg:col-span-5 flex flex-col gap-6 lg:h-full overflow-visible lg:overflow-hidden">
         {/* Selected Ingredients */}
-        <Card className="flex-1 flex flex-col overflow-hidden">
+        <Card className="flex-1 flex flex-col overflow-visible lg:overflow-hidden min-h-[200px]">
           <CardHeader className="shrink-0 pb-2">
             <CardTitle className="text-lg">Mixing Palette</CardTitle>
           </CardHeader>
-          <CardContent className="flex-1 overflow-y-auto custom-scrollbar">
+          <CardContent className="flex-1 overflow-visible lg:overflow-y-auto custom-scrollbar">
             {ingredients.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center text-muted-foreground p-4">
                 <Palette className="h-12 w-12 mb-4 opacity-20" />
@@ -454,7 +450,9 @@ export default function ColorMixer() {
                         min={1}
                         max={10}
                         step={1}
-                        onValueChange={(val: number[]) => updateParts(ing.color.id, val)}
+                        onValueChange={(val: number[]) =>
+                          updateParts(ing.color.id, val)
+                        }
                         className="flex-1"
                       />
                       <span className="w-12 text-right font-mono text-sm">
@@ -463,11 +461,11 @@ export default function ColorMixer() {
                     </div>
                   </div>
                 ))}
-                
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={clearAll} 
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={clearAll}
                   className="w-full mt-4"
                 >
                   Clear Palette
@@ -489,13 +487,17 @@ export default function ColorMixer() {
                   />
                 ) : (
                   <div className="w-full h-full bg-muted flex items-center justify-center rounded-full">
-                    <span className="text-xs text-muted-foreground">No Mix</span>
+                    <span className="text-xs text-muted-foreground">
+                      No Mix
+                    </span>
                   </div>
                 )}
               </div>
               <div className="flex-1 space-y-3">
                 <div>
-                  <Label className="text-xs text-muted-foreground">Result Hex</Label>
+                  <Label className="text-xs text-muted-foreground">
+                    Result Hex
+                  </Label>
                   <div className="font-mono font-medium">
                     {mixedColor?.hex || "---"}
                   </div>

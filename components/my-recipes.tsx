@@ -55,21 +55,24 @@ interface Recipe {
 
 export default function MyRecipes() {
   // 使用 SWR 进行数据缓存
-  const { data: recipes = [], isLoading: loading, mutate: mutateRecipes } = useSWR<Recipe[]>(
-    "/api/recipes",
-    fetcher,
-    {
-      revalidateOnFocus: false,
-      dedupingInterval: 30000,
-    }
-  );
+  const {
+    data: recipes = [],
+    isLoading: loading,
+    mutate: mutateRecipes,
+  } = useSWR<Recipe[]>("/api/recipes", fetcher, {
+    revalidateOnFocus: false,
+    dedupingInterval: 30000,
+  });
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [selectedRecipeId, setSelectedRecipeId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
 
   const handleUpdate = (updatedRecipe: Recipe) => {
     // 乐观更新
-    mutateRecipes(recipes.map((r) => (r.id === updatedRecipe.id ? updatedRecipe : r)), false);
+    mutateRecipes(
+      recipes.map((r) => (r.id === updatedRecipe.id ? updatedRecipe : r)),
+      false
+    );
   };
 
   const handleDeleteClick = (recipeId: string) => {
@@ -86,7 +89,10 @@ export default function MyRecipes() {
       });
       if (res.ok) {
         // 乐观更新
-        mutateRecipes(recipes.filter((r) => r.id !== selectedRecipeId), false);
+        mutateRecipes(
+          recipes.filter((r) => r.id !== selectedRecipeId),
+          false
+        );
         setIsDeleteOpen(false);
         setSelectedRecipeId(null);
         toast.success("Recipe deleted successfully");
