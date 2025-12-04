@@ -63,6 +63,7 @@ export default function ColorAnalyzer() {
   const [mixSuggestions, setMixSuggestions] = useState<MixSuggestion[]>([]);
   const [loading, setLoading] = useState(false);
   const [isPicking, setIsPicking] = useState(false);
+  const [manualHex, setManualHex] = useState("");
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -147,13 +148,36 @@ export default function ColorAnalyzer() {
   );
 
   const handleManualColorInput = (hex: string) => {
-    if (!/^#[0-9A-Fa-f]{6}$/.test(hex)) return;
+    // 允许用户输入时不带 # 前缀
+    let normalizedHex = hex.trim();
+    if (!normalizedHex.startsWith("#") && normalizedHex.length > 0) {
+      normalizedHex = "#" + normalizedHex;
+    }
 
-    const r = parseInt(hex.slice(1, 3), 16);
-    const g = parseInt(hex.slice(3, 5), 16);
-    const b = parseInt(hex.slice(5, 7), 16);
+    if (!/^#[0-9A-Fa-f]{6}$/.test(normalizedHex)) return;
 
-    setPickedColor({ r, g, b, hex });
+    const r = parseInt(normalizedHex.slice(1, 3), 16);
+    const g = parseInt(normalizedHex.slice(3, 5), 16);
+    const b = parseInt(normalizedHex.slice(5, 7), 16);
+
+    setPickedColor({ r, g, b, hex: normalizedHex.toUpperCase() });
+  };
+
+  const handleManualColorSubmit = () => {
+    handleManualColorInput(manualHex);
+  };
+
+  const handleColorPickerChange = (hex: string) => {
+    setManualHex(hex);
+    handleManualColorInput(hex);
+  };
+
+  const isValidHex = (hex: string) => {
+    let normalizedHex = hex.trim();
+    if (!normalizedHex.startsWith("#") && normalizedHex.length > 0) {
+      normalizedHex = "#" + normalizedHex;
+    }
+    return /^#[0-9A-Fa-f]{6}$/.test(normalizedHex);
   };
 
   const analyzeColor = async () => {
@@ -256,20 +280,35 @@ export default function ColorAnalyzer() {
           </div>
 
           {/* Manual Color Input */}
-          <div className="flex gap-4 items-end">
-            <div className="flex-1 max-w-xs">
+          <div className="flex gap-2 items-end flex-wrap">
+            <div className="flex-1 min-w-[200px] max-w-xs">
               <Label htmlFor="manual-hex">Or enter color code</Label>
               <Input
                 id="manual-hex"
                 type="text"
-                placeholder="#FF5733"
-                onChange={(e) => handleManualColorInput(e.target.value)}
+                placeholder="#FF5733 or FF5733"
+                value={manualHex}
+                onChange={(e) => setManualHex(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    handleManualColorSubmit();
+                  }
+                }}
               />
             </div>
+            <Button
+              onClick={handleManualColorSubmit}
+              disabled={!isValidHex(manualHex)}
+              className="shrink-0"
+            >
+              <Search className="mr-2 h-4 w-4" />
+              Apply Color
+            </Button>
             <Input
               type="color"
-              className="w-16 h-10 p-1 cursor-pointer"
-              onChange={(e) => handleManualColorInput(e.target.value)}
+              className="w-12 h-10 p-1 cursor-pointer shrink-0"
+              value={manualHex.startsWith("#") ? manualHex : "#000000"}
+              onChange={(e) => handleColorPickerChange(e.target.value)}
             />
           </div>
         </CardContent>
@@ -367,7 +406,10 @@ export default function ColorAnalyzer() {
                       <div className="p-4 space-y-3">
                         <div>
                           <div className="flex items-center justify-between mb-1">
-                            <h4 className="font-medium truncate" title={match.name}>
+                            <h4
+                              className="font-medium truncate"
+                              title={match.name}
+                            >
                               {match.name}
                             </h4>
                             <Badge
@@ -386,7 +428,7 @@ export default function ColorAnalyzer() {
                             {match.series.name}
                           </Badge>
                         </div>
-                        
+
                         <div className="text-xs text-muted-foreground font-mono">
                           {match.hex}
                           <br />
@@ -400,7 +442,11 @@ export default function ColorAnalyzer() {
                             rel="noopener noreferrer"
                             className="block"
                           >
-                            <Button variant="outline" size="sm" className="w-full">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="w-full"
+                            >
                               <ShoppingCart className="h-3 w-3 mr-2" />
                               Buy Now
                             </Button>

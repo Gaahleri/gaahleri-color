@@ -48,16 +48,18 @@ export default function ColorCard({
         <div className="absolute top-2 right-2 flex flex-col gap-1">
           {onSaveClick && (
             <Button
-              variant="secondary"
+              variant="ghost"
               size="icon"
               className="h-7 w-7 rounded-full shadow-sm"
               onClick={(e) => onSaveClick(color.id, e)}
               disabled={isSaved}
+              aria-pressed={isSaved}
+              aria-label={isSaved ? "Saved" : "Save to library"}
             >
               <Heart
                 className={cn(
                   "h-3.5 w-3.5",
-                  isSaved ? "fill-red-500 text-red-500" : ""
+                  isSaved ? "fill-pink-500 text-pink-500" : "text-muted-foreground"
                 )}
               />
             </Button>

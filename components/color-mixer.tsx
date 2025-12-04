@@ -200,8 +200,13 @@ export default function ColorMixer() {
   const handleSaveColor = async (colorId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     if (savedColorIds.has(colorId)) return;
-
+    // 乐观更新：先在本地把 colorId 添加到 userRecords，失败时回滚并提示
+    const previous = userRecords || [];
+    const optimistic = [...previous, { colorId }];
     try {
+      // Apply optimistic update without revalidation
+      mutateRecords(optimistic, false);
+
       const res = await fetch("/api/user/colors", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -209,11 +214,17 @@ export default function ColorMixer() {
       });
 
       if (res.ok) {
-        // 刷新用户记录数据
-        mutateRecords();
-        toast.success("Color saved to library");
+        // 成功：后台重新验证并替换为真实数据 (不需要提示成功)
+        await mutateRecords();
+      } else {
+        // 失败：回滚并提示错误
+        mutateRecords(previous, false);
+        console.error("Failed to save color, status:", res.status);
+        toast.error("Failed to save color");
       }
     } catch (error) {
+      // 回滚并提示错误
+      mutateRecords(previous, false);
       console.error("Failed to save color:", error);
       toast.error("Failed to save color");
     }

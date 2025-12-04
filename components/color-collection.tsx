@@ -28,16 +28,16 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+// Badge removed — not used in this file
 import {
   Plus,
-  Heart,
   Trash2,
   Loader2,
   Palette,
   ShoppingCart,
 } from "lucide-react";
 import ColorCard from "@/components/color-card";
+import { toast } from "sonner";
 
 interface Color {
   id: string;
@@ -91,63 +91,73 @@ export default function ColorCollection() {
   const addColor = async () => {
     if (!selectedColorId) return;
     setAdding(true);
+    // Optimistic update: show temp record immediately
+    const previous = records || [];
+    const colorToAdd = colors.find((c) => c.id === selectedColorId);
+    const tempRecord: UserRecord = {
+      id: `temp-${Date.now()}`,
+      isFavorite: false,
+      note: null,
+      color: colorToAdd as Color,
+      createdAt: new Date().toISOString(),
+    };
+
     try {
+      // Apply optimistic update (no revalidation yet)
+      mutateRecords([tempRecord, ...previous], false);
+
       const res = await fetch("/api/user/colors", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ colorId: selectedColorId }),
       });
+
       if (res.ok) {
         const newRecord = await res.json();
-        // 乐观更新
-        mutateRecords([newRecord, ...records], false);
+        // Replace temp with server record
+        mutateRecords([newRecord, ...previous], false);
         setSelectedColorId("");
+      } else {
+        // Rollback
+        mutateRecords(previous, false);
+        toast.error("Failed to add color");
       }
     } catch (error) {
+      // Rollback
+      mutateRecords(previous, false);
       console.error("Failed to add color:", error);
+      toast.error("Failed to add color");
     } finally {
       setAdding(false);
     }
   };
 
-  const toggleFavorite = async (record: UserRecord) => {
-    try {
-      const res = await fetch(`/api/user/colors/${record.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ isFavorite: !record.isFavorite }),
-      });
-      if (res.ok) {
-        const updated = await res.json();
-        // 乐观更新
-        mutateRecords(
-          records.map((r) => (r.id === record.id ? updated : r)),
-          false
-        );
-      }
-    } catch (error) {
-      console.error("Failed to toggle favorite:", error);
-    }
-  };
 
   const handleDelete = async () => {
     if (!selectedRecord) return;
     setDeleting(true);
+    const previous = records || [];
+
+    // Optimistic update: remove from UI immediately
+    mutateRecords(previous.filter((r) => r.id !== selectedRecord.id), false);
+    // Close the dialog and clear selection right away
+    setIsDeleteOpen(false);
+    setSelectedRecord(null);
+
     try {
       const res = await fetch(`/api/user/colors/${selectedRecord.id}`, {
         method: "DELETE",
       });
-      if (res.ok) {
-        // 乐观更新
-        mutateRecords(
-          records.filter((r) => r.id !== selectedRecord.id),
-          false
-        );
-        setIsDeleteOpen(false);
-        setSelectedRecord(null);
+      if (!res.ok) {
+        // Rollback on failure
+        mutateRecords(previous, false);
+        toast.error("Failed to remove color");
       }
     } catch (error) {
+      // Rollback on exception
+      mutateRecords(previous, false);
       console.error("Failed to delete record:", error);
+      toast.error("Failed to remove color");
     } finally {
       setDeleting(false);
     }
@@ -247,34 +257,32 @@ export default function ColorCollection() {
           <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {records.map((record) => (
               <div key={record.id} className="space-y-2">
-                <ColorCard
-                  color={record.color}
-                  isSelected={false}
-                  isSaved={record.isFavorite}
-                  onCardClick={() => {}}
-                  onSaveClick={(_, e) => {
-                    e.stopPropagation();
-                    toggleFavorite(record);
-                  }}
-                  showActions={true}
-                />
+                  <ColorCard
+                    color={record.color}
+                    isSelected={false}
+                    isSaved={record.isFavorite}
+                    onCardClick={() => {}}
+                    showActions={false}
+                  />
 
                 {/* Additional Actions Below Card */}
                 <div className="flex items-center justify-between px-2">
-                  {record.color.buyLink ? (
-                    <a
-                      href={record.color.buyLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      <Button variant="outline" size="sm">
-                        <ShoppingCart className="h-3 w-3 mr-1" />
-                        Buy
-                      </Button>
-                    </a>
-                  ) : (
-                    <div />
-                  )}
+                  <div className="flex items-center gap-2">
+                    {record.color.buyLink ? (
+                      <a
+                        href={record.color.buyLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <Button variant="outline" size="sm">
+                          <ShoppingCart className="h-3 w-3 mr-1" />
+                          Buy
+                        </Button>
+                      </a>
+                    ) : (
+                      <div />
+                    )}
+                  </div>
                   <Button
                     variant="ghost"
                     size="icon"
