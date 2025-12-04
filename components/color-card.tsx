@@ -27,6 +27,20 @@ interface ColorCardProps {
   showActions?: boolean;
 }
 
+// Helper to track purchase click (fire-and-forget)
+const trackPurchaseClick = async (colorId: string) => {
+  try {
+    await fetch("/api/purchase-clicks", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ colorId }),
+    });
+  } catch (error) {
+    // Silently fail - this is just tracking
+    console.error("Failed to track purchase click:", error);
+  }
+};
+
 export default function ColorCard({
   color,
   isSelected = false,
@@ -35,6 +49,13 @@ export default function ColorCard({
   onSaveClick,
   showActions = true,
 }: ColorCardProps) {
+  const handleBuyClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    // Track the click asynchronously (fire-and-forget)
+    trackPurchaseClick(color.id);
+    // The actual navigation is handled by the <a> tag
+  };
+
   return (
     <div
       className={cn(
@@ -59,7 +80,9 @@ export default function ColorCard({
               <Heart
                 className={cn(
                   "h-3.5 w-3.5",
-                  isSaved ? "fill-pink-500 text-pink-500" : "text-muted-foreground"
+                  isSaved
+                    ? "fill-pink-500 text-pink-500"
+                    : "text-muted-foreground"
                 )}
               />
             </Button>
@@ -69,7 +92,7 @@ export default function ColorCard({
               href={color.buyLink}
               target="_blank"
               rel="noopener noreferrer"
-              onClick={(e) => e.stopPropagation()}
+              onClick={handleBuyClick}
             >
               <Button
                 variant="secondary"

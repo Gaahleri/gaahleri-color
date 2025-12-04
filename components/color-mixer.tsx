@@ -16,14 +16,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -34,17 +27,13 @@ import {
 import {
   Save,
   Trash2,
-  ShoppingCart,
   Loader2,
   Palette,
-  Heart,
-  Check,
   ChevronLeft,
   ChevronRight,
-  Library,
 } from "lucide-react";
 import mixbox from "mixbox";
-import { cn } from "@/lib/utils";
+// cn helper not needed here
 import { toast } from "sonner";
 import ColorCard from "@/components/color-card";
 
@@ -327,7 +316,7 @@ export default function ColorMixer() {
                 onClick={() => setSource("catalog")}
                 className="h-7 text-xs"
               >
-                Catalog
+                Gaahleri Color
               </Button>
               <Button
                 variant={source === "library" ? "default" : "ghost"}
@@ -335,7 +324,7 @@ export default function ColorMixer() {
                 onClick={() => setSource("library")}
                 className="h-7 text-xs"
               >
-                My Library
+                My Color
               </Button>
             </div>
           </div>

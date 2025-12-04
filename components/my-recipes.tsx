@@ -83,23 +83,31 @@ export default function MyRecipes() {
   const handleDeleteConfirm = async () => {
     if (!selectedRecipeId) return;
     setDeleting(true);
+
+    const previous = recipes || [];
+    const recipeIdToDelete = selectedRecipeId;
+
+    // Optimistic update: remove from UI immediately and close dialog
+    mutateRecipes(
+      previous.filter((r) => r.id !== recipeIdToDelete),
+      false
+    );
+    setIsDeleteOpen(false);
+    setSelectedRecipeId(null);
+
     try {
-      const res = await fetch(`/api/recipes/${selectedRecipeId}`, {
+      const res = await fetch(`/api/recipes/${recipeIdToDelete}`, {
         method: "DELETE",
       });
-      if (res.ok) {
-        // 乐观更新
-        mutateRecipes(
-          recipes.filter((r) => r.id !== selectedRecipeId),
-          false
-        );
-        setIsDeleteOpen(false);
-        setSelectedRecipeId(null);
-        toast.success("Recipe deleted successfully");
-      } else {
+      if (!res.ok) {
+        // Rollback on failure
+        mutateRecipes(previous, false);
         toast.error("Failed to delete recipe");
       }
+      // Success: no toast needed
     } catch (error) {
+      // Rollback on exception
+      mutateRecipes(previous, false);
       console.error("Failed to delete recipe:", error);
       toast.error("Failed to delete recipe");
     } finally {

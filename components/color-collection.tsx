@@ -29,15 +29,23 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 // Badge removed — not used in this file
-import {
-  Plus,
-  Trash2,
-  Loader2,
-  Palette,
-  ShoppingCart,
-} from "lucide-react";
+import { Plus, Trash2, Loader2, Palette, ShoppingCart } from "lucide-react";
 import ColorCard from "@/components/color-card";
 import { toast } from "sonner";
+
+// Helper to track purchase click (fire-and-forget)
+const trackPurchaseClick = async (colorId: string) => {
+  try {
+    await fetch("/api/purchase-clicks", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ colorId }),
+    });
+  } catch (error) {
+    // Silently fail - this is just tracking
+    console.error("Failed to track purchase click:", error);
+  }
+};
 
 interface Color {
   id: string;
@@ -132,14 +140,16 @@ export default function ColorCollection() {
     }
   };
 
-
   const handleDelete = async () => {
     if (!selectedRecord) return;
     setDeleting(true);
     const previous = records || [];
 
     // Optimistic update: remove from UI immediately
-    mutateRecords(previous.filter((r) => r.id !== selectedRecord.id), false);
+    mutateRecords(
+      previous.filter((r) => r.id !== selectedRecord.id),
+      false
+    );
     // Close the dialog and clear selection right away
     setIsDeleteOpen(false);
     setSelectedRecord(null);
@@ -257,13 +267,13 @@ export default function ColorCollection() {
           <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {records.map((record) => (
               <div key={record.id} className="space-y-2">
-                  <ColorCard
-                    color={record.color}
-                    isSelected={false}
-                    isSaved={record.isFavorite}
-                    onCardClick={() => {}}
-                    showActions={false}
-                  />
+                <ColorCard
+                  color={record.color}
+                  isSelected={false}
+                  isSaved={record.isFavorite}
+                  onCardClick={() => {}}
+                  showActions={false}
+                />
 
                 {/* Additional Actions Below Card */}
                 <div className="flex items-center justify-between px-2">
@@ -273,6 +283,7 @@ export default function ColorCollection() {
                         href={record.color.buyLink}
                         target="_blank"
                         rel="noopener noreferrer"
+                        onClick={() => trackPurchaseClick(record.color.id)}
                       >
                         <Button variant="outline" size="sm">
                           <ShoppingCart className="h-3 w-3 mr-1" />

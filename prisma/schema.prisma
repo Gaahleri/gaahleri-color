@@ -45,6 +45,7 @@ model Color {
 
   userRecords       UserRecord[] // Users who saved/liked this color
   recipeIngredients RecipeIngredient[] // This color used in recipes
+  purchaseClicks    PurchaseClick[] // Clicks on buy button for this color
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -135,4 +136,20 @@ model RecipeIngredient {
   @@unique([recipeId, colorId]) // Same color can't be added twice to one recipe
   @@index([recipeId])
   @@index([colorId])
+}
+
+// PurchaseClick model - tracks user clicks on buy buttons for admin statistics
+model PurchaseClick {
+  id String @id @default(cuid())
+
+  colorId String
+  color   Color  @relation(fields: [colorId], references: [id], onDelete: Cascade)
+
+  userId String? // Optional: Clerk user ID if logged in, null for anonymous
+  
+  createdAt DateTime @default(now())
+
+  @@index([colorId])
+  @@index([userId])
+  @@index([createdAt]) // For monthly filtering
 }

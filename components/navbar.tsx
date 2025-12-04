@@ -39,9 +39,9 @@ export default function Navbar() {
 
   const navItems = [
     { href: "/user-home", label: "Home", icon: Home },
-    { href: "/make-color", label: "Create Your Color", icon: Droplet },
-    { href: "/analyze-color", label: "Analyse Your Color", icon: BarChart3 },
-    { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+    { href: "/make-color", label: "Create Colors", icon: Droplet },
+    { href: "/analyze-color", label: "Analyse Colors", icon: BarChart3 },
+    { href: "/dashboard", label: "My Color Library", icon: LayoutDashboard },
   ];
 
   return (

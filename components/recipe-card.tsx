@@ -13,14 +13,23 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Edit2,
-  Trash2,
-  ShoppingCart,
-  Loader2,
-} from "lucide-react";
+import { Edit2, Trash2, ShoppingCart, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+
+// Helper to track purchase click (fire-and-forget)
+const trackPurchaseClick = async (colorId: string) => {
+  try {
+    await fetch("/api/purchase-clicks", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ colorId }),
+    });
+  } catch (error) {
+    // Silently fail - this is just tracking
+    console.error("Failed to track purchase click:", error);
+  }
+};
 
 interface RecipeIngredient {
   id: string;
@@ -64,7 +73,9 @@ export default function RecipeCard({
 }: RecipeCardProps) {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editName, setEditName] = useState(recipe.name);
-  const [editDescription, setEditDescription] = useState(recipe.description || "");
+  const [editDescription, setEditDescription] = useState(
+    recipe.description || ""
+  );
   const [saving, setSaving] = useState(false);
 
   const handleEdit = async () => {
@@ -74,6 +85,19 @@ export default function RecipeCard({
     }
 
     setSaving(true);
+
+    // Store previous state for rollback
+    const previousRecipe = { ...recipe };
+
+    // Optimistic update: apply changes to UI immediately and close dialog
+    const optimisticRecipe: Recipe = {
+      ...recipe,
+      name: editName,
+      description: editDescription || null,
+    };
+    onUpdate(optimisticRecipe);
+    setIsEditOpen(false);
+
     try {
       const res = await fetch(`/api/recipes/${recipe.id}`, {
         method: "PUT",
@@ -85,14 +109,18 @@ export default function RecipeCard({
       });
 
       if (res.ok) {
+        // Replace with server response to ensure consistency
         const updated = await res.json();
         onUpdate(updated);
-        setIsEditOpen(false);
-        toast.success("Recipe updated successfully");
+        // Success: no toast needed
       } else {
+        // Rollback on failure
+        onUpdate(previousRecipe);
         toast.error("Failed to update recipe");
       }
     } catch (error) {
+      // Rollback on exception
+      onUpdate(previousRecipe);
       console.error("Failed to update recipe:", error);
       toast.error("Failed to update recipe");
     } finally {
@@ -137,7 +165,10 @@ export default function RecipeCard({
 
         {/* Recipe Info */}
         <div className="text-center w-full space-y-1 mb-3">
-          <div className="font-medium text-sm truncate w-full px-8" title={recipe.name}>
+          <div
+            className="font-medium text-sm truncate w-full px-8"
+            title={recipe.name}
+          >
             {recipe.name}
           </div>
           <div className="text-xs text-muted-foreground font-mono">
@@ -167,7 +198,10 @@ export default function RecipeCard({
                     href={ing.color.buyLink}
                     target="_blank"
                     rel="noopener noreferrer"
-                    onClick={(e) => e.stopPropagation()}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      trackPurchaseClick(ing.color.id);
+                    }}
                     title={`Buy ${ing.color.name}`}
                   >
                     <Button
@@ -227,7 +261,7 @@ export default function RecipeCard({
                 placeholder="Notes about this color..."
               />
             </div>
-            
+
             {/* Preview */}
             <div className="flex items-center gap-4 p-4 rounded-lg bg-muted">
               <div
@@ -244,8 +278,8 @@ export default function RecipeCard({
             </div>
           </div>
           <DialogFooter>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => setIsEditOpen(false)}
               disabled={saving}
             >
