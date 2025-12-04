@@ -35,6 +35,7 @@ import {
   Palette,
   ShoppingCart,
 } from "lucide-react";
+import ColorCard from "@/components/color-card";
 
 interface Color {
   id: string;
@@ -42,10 +43,13 @@ interface Color {
   hex: string;
   rgb: string;
   buyLink: string | null;
+  badge: string | null;
+  status: string | null;
   series: {
     id: string;
     name: string;
   };
+  updatedAt: string;
 }
 
 interface UserRecord {
@@ -247,69 +251,48 @@ export default function ColorCollection() {
             </p>
           </div>
         ) : (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {records.map((record) => (
-              <div
-                key={record.id}
-                className="border rounded-lg overflow-hidden hover:shadow-md transition-shadow"
-              >
-                <div
-                  className="h-24 w-full"
-                  style={{ backgroundColor: record.color.hex }}
+              <div key={record.id} className="space-y-2">
+                <ColorCard
+                  color={record.color}
+                  isSelected={false}
+                  isSaved={record.isFavorite}
+                  onCardClick={() => {}}
+                  onSaveClick={(_, e) => {
+                    e.stopPropagation();
+                    toggleFavorite(record);
+                  }}
+                  showActions={true}
                 />
-                <div className="p-3 space-y-2">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <h4 className="font-medium text-sm">
-                        {record.color.name}
-                      </h4>
-                      <Badge variant="secondary" className="text-xs mt-1">
-                        {record.color.series.name}
-                      </Badge>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={() => toggleFavorite(record)}
+                
+                {/* Additional Actions Below Card */}
+                <div className="flex items-center justify-between px-2">
+                  {record.color.buyLink ? (
+                    <a
+                      href={record.color.buyLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
                     >
-                      <Heart
-                        className={`h-4 w-4 ${
-                          record.isFavorite ? "fill-red-500 text-red-500" : ""
-                        }`}
-                      />
-                    </Button>
-                  </div>
-                  <div className="text-xs text-muted-foreground font-mono">
-                    {record.color.hex} | RGB: {record.color.rgb}
-                  </div>
-                  <div className="flex items-center justify-between pt-2 border-t">
-                    {record.color.buyLink ? (
-                      <a
-                        href={record.color.buyLink}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <Button variant="outline" size="sm">
-                          <ShoppingCart className="h-3 w-3 mr-1" />
-                          Buy
-                        </Button>
-                      </a>
-                    ) : (
-                      <div />
-                    )}
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={() => {
-                        setSelectedRecord(record);
-                        setIsDeleteOpen(true);
-                      }}
-                    >
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </div>
+                      <Button variant="outline" size="sm">
+                        <ShoppingCart className="h-3 w-3 mr-1" />
+                        Buy
+                      </Button>
+                    </a>
+                  ) : (
+                    <div />
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => {
+                      setSelectedRecord(record);
+                      setIsDeleteOpen(true);
+                    }}
+                  >
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
                 </div>
               </div>
             ))}

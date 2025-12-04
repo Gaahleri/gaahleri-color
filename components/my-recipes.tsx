@@ -8,8 +8,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,7 +18,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Loader2, Trash2, ShoppingCart, BookOpen } from "lucide-react";
+import { Loader2, BookOpen } from "lucide-react";
+import RecipeCard from "@/components/recipe-card";
+import { toast } from "sonner";
 
 interface RecipeIngredient {
   id: string;
@@ -31,6 +31,13 @@ interface RecipeIngredient {
     hex: string;
     rgb: string;
     buyLink: string | null;
+    badge: string | null;
+    status: string | null;
+    series: {
+      id: string;
+      name: string;
+    };
+    updatedAt: string;
   };
 }
 
@@ -48,7 +55,7 @@ export default function MyRecipes() {
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-  const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
+  const [selectedRecipeId, setSelectedRecipeId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
@@ -64,34 +71,45 @@ export default function MyRecipes() {
       }
     } catch (error) {
       console.error("Failed to fetch recipes:", error);
+      toast.error("Failed to load recipes");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDelete = async () => {
-    if (!selectedRecipe) return;
+  const handleUpdate = (updatedRecipe: Recipe) => {
+    setRecipes(recipes.map((r) => (r.id === updatedRecipe.id ? updatedRecipe : r)));
+  };
+
+  const handleDeleteClick = (recipeId: string) => {
+    setSelectedRecipeId(recipeId);
+    setIsDeleteOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!selectedRecipeId) return;
     setDeleting(true);
     try {
-      const res = await fetch(`/api/recipes/${selectedRecipe.id}`, {
+      const res = await fetch(`/api/recipes/${selectedRecipeId}`, {
         method: "DELETE",
       });
       if (res.ok) {
-        setRecipes(recipes.filter((r) => r.id !== selectedRecipe.id));
+        setRecipes(recipes.filter((r) => r.id !== selectedRecipeId));
         setIsDeleteOpen(false);
-        setSelectedRecipe(null);
+        setSelectedRecipeId(null);
+        toast.success("Recipe deleted successfully");
+      } else {
+        toast.error("Failed to delete recipe");
       }
     } catch (error) {
       console.error("Failed to delete recipe:", error);
+      toast.error("Failed to delete recipe");
     } finally {
       setDeleting(false);
     }
   };
 
-  const openDeleteDialog = (recipe: Recipe) => {
-    setSelectedRecipe(recipe);
-    setIsDeleteOpen(true);
-  };
+  const selectedRecipe = recipes.find((r) => r.id === selectedRecipeId);
 
   if (loading) {
     return (
@@ -120,94 +138,14 @@ export default function MyRecipes() {
             </p>
           </div>
         ) : (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {recipes.map((recipe) => (
-              <div
+              <RecipeCard
                 key={recipe.id}
-                className="border rounded-lg overflow-hidden hover:shadow-lg transition-shadow"
-              >
-                {/* Color Preview */}
-                <div
-                  className="h-32 w-full"
-                  style={{ backgroundColor: recipe.resultHex }}
-                />
-
-                {/* Info */}
-                <div className="p-4 space-y-3">
-                  <div>
-                    <h3 className="font-semibold">{recipe.name}</h3>
-                    {recipe.description && (
-                      <p className="text-sm text-muted-foreground line-clamp-2">
-                        {recipe.description}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="flex items-center gap-2 text-sm">
-                    <span className="font-mono">{recipe.resultHex}</span>
-                    <span className="text-muted-foreground">|</span>
-                    <span className="font-mono text-muted-foreground">
-                      RGB: {recipe.resultRgb}
-                    </span>
-                  </div>
-
-                  {/* Ingredients */}
-                  <div className="space-y-1">
-                    <span className="text-xs text-muted-foreground">
-                      Ingredients:
-                    </span>
-                    <div className="flex flex-wrap gap-1">
-                      {recipe.ingredients.map((ing) => (
-                        <Badge
-                          key={ing.id}
-                          variant="secondary"
-                          className="text-xs flex items-center gap-1"
-                        >
-                          <div
-                            className="w-2 h-2 rounded-full"
-                            style={{ backgroundColor: ing.color.hex }}
-                          />
-                          {ing.parts}x {ing.color.name}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex items-center justify-between pt-2 border-t">
-                    <div className="flex gap-1">
-                      {recipe.ingredients
-                        .filter((ing) => ing.color.buyLink)
-                        .slice(0, 3)
-                        .map((ing) => (
-                          <a
-                            key={ing.id}
-                            href={ing.color.buyLink!}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            title={`Buy ${ing.color.name}`}
-                          >
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8"
-                            >
-                              <ShoppingCart className="h-4 w-4" />
-                            </Button>
-                          </a>
-                        ))}
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={() => openDeleteDialog(recipe)}
-                    >
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </div>
-                </div>
-              </div>
+                recipe={recipe}
+                onUpdate={handleUpdate}
+                onDelete={handleDeleteClick}
+              />
             ))}
           </div>
         )}
@@ -226,7 +164,7 @@ export default function MyRecipes() {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={handleDelete}
+              onClick={handleDeleteConfirm}
               className="bg-destructive text-destructive-foreground"
             >
               {deleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

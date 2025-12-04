@@ -44,6 +44,7 @@ import {
 import mixbox from "mixbox";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import ColorCard from "@/components/color-card";
 
 interface Series {
   id: string;
@@ -56,6 +57,8 @@ interface Color {
   hex: string;
   rgb: string;
   buyLink: string | null;
+  badge: string | null;
+  status: string | null;
   series: {
     id: string;
     name: string;
@@ -379,75 +382,15 @@ export default function ColorMixer() {
                 const isSaved = savedColorIds.has(color.id);
 
                 return (
-                  <div
+                  <ColorCard
                     key={color.id}
-                    className={cn(
-                      "group relative flex flex-col items-center p-4 rounded-xl border transition-all hover:shadow-md cursor-pointer bg-card",
-                      isSelected ? "ring-2 ring-primary border-primary" : ""
-                    )}
-                    onClick={() => addIngredient(color)}
-                  >
-                    {/* Circular Color Swatch */}
-                    <div
-                      className="w-16 h-16 rounded-full shadow-sm mb-3 border"
-                      style={{ backgroundColor: color.hex }}
-                    />
-                    
-                    {/* Info */}
-                    <div className="text-center w-full space-y-1">
-                      <div className="font-medium text-sm truncate w-full" title={color.name}>
-                        {color.name}
-                      </div>
-                      <div className="text-xs text-muted-foreground font-mono">
-                        {color.hex}
-                      </div>
-                      <div className="text-[10px] text-muted-foreground truncate w-full">
-                        {color.series.name}
-                      </div>
-                    </div>
-
-                    {/* Actions Overlay */}
-                    <div className="absolute top-2 right-2 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button
-                        variant="secondary"
-                        size="icon"
-                        className="h-6 w-6 rounded-full shadow-sm"
-                        onClick={(e) => handleSaveColor(color.id, e)}
-                        disabled={isSaved}
-                      >
-                        <Heart
-                          className={cn(
-                            "h-3 w-3",
-                            isSaved ? "fill-red-500 text-red-500" : ""
-                          )}
-                        />
-                      </Button>
-                      {color.buyLink && (
-                        <a
-                          href={color.buyLink}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <Button
-                            variant="secondary"
-                            size="icon"
-                            className="h-6 w-6 rounded-full shadow-sm"
-                          >
-                            <ShoppingCart className="h-3 w-3" />
-                          </Button>
-                        </a>
-                      )}
-                    </div>
-
-                    {isSelected && (
-                      <div className="absolute top-2 left-2">
-                        <Badge variant="default" className="h-5 w-5 p-0 flex items-center justify-center rounded-full">
-                          <Check className="h-3 w-3" />
-                        </Badge>
-                      </div>
-                    )}
-                  </div>
+                    color={color}
+                    isSelected={isSelected}
+                    isSaved={isSaved}
+                    onCardClick={addIngredient}
+                    onSaveClick={handleSaveColor}
+                    showActions={true}
+                  />
                 );
               })}
             </div>
