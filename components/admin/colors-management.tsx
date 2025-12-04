@@ -1,10 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import {
   Dialog,
   DialogContent,
@@ -24,6 +28,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -32,14 +40,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
   Card,
   CardContent,
   CardDescription,
@@ -47,7 +47,9 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Pencil, Trash2, Loader2, ExternalLink } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, Search } from "lucide-react";
+import { createColor, updateColor, deleteColor } from "@/app/admin/actions";
+import { toast } from "sonner";
 
 interface Series {
   id: string;
@@ -61,180 +63,173 @@ interface Color {
   rgb: string;
   description: string | null;
   buyLink: string | null;
+  badge: string | null;
+  status: string | null;
   seriesId: string;
-  series: {
-    id: string;
-    name: string;
-  };
-  createdAt: string;
+  series: Series;
 }
 
 export default function ColorsManagement() {
   const [colors, setColors] = useState<Color[]>([]);
   const [series, setSeries] = useState<Series[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [isAddOpen, setIsAddOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [selectedColor, setSelectedColor] = useState<Color | null>(null);
-  const [filterSeriesId, setFilterSeriesId] = useState<string>("all");
+  const [submitting, setSubmitting] = useState(false);
+
+  // Form states
   const [formData, setFormData] = useState({
     name: "",
-    hex: "#000000",
-    rgb: "0,0,0",
+    hex: "",
+    rgb: "",
     description: "",
     buyLink: "",
+    badge: "",
+    status: "",
     seriesId: "",
   });
-  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     fetchData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  useEffect(() => {
-    fetchColors();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filterSeriesId]);
-
   const fetchData = async () => {
-    await Promise.all([fetchColors(), fetchSeries()]);
-    setLoading(false);
-  };
-
-  const fetchColors = async () => {
     try {
-      const url =
-        filterSeriesId && filterSeriesId !== "all"
-          ? `/api/admin/colors?seriesId=${filterSeriesId}`
-          : "/api/admin/colors";
-      const res = await fetch(url);
-      const data = await res.json();
-      setColors(data);
+      const [colorsRes, seriesRes] = await Promise.all([
+        fetch("/api/admin/colors"),
+        fetch("/api/admin/series"),
+      ]);
+
+      if (colorsRes.ok) {
+        const colorsData = await colorsRes.json();
+        setColors(colorsData);
+      }
+      
+      // Fallback or check if seriesRes is ok. 
+      // If /api/series doesn't exist, we might need to find where it is.
+      // Assuming /api/admin/series for now based on typical structure, or I will check file system.
+      if (seriesRes.ok) {
+         const seriesData = await seriesRes.json();
+         setSeries(seriesData);
+      } else {
+          // Try /api/series as originally in code, maybe I missed it or it's dynamic
+          const retrySeries = await fetch("/api/series");
+          if (retrySeries.ok) {
+              const seriesData = await retrySeries.json();
+              setSeries(seriesData);
+          }
+      }
+
     } catch (error) {
-      console.error("Failed to fetch colors:", error);
+      console.error("Failed to fetch data:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const fetchSeries = async () => {
+  const handleAdd = async () => {
+    setSubmitting(true);
     try {
-      const res = await fetch("/api/admin/series");
-      const data = await res.json();
-      setSeries(data);
-    } catch (error) {
-      console.error("Failed to fetch series:", error);
-    }
-  };
-
-  const hexToRgb = (hex: string): string => {
-    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-    if (result) {
-      return `${parseInt(result[1], 16)},${parseInt(result[2], 16)},${parseInt(
-        result[3],
-        16
-      )}`;
-    }
-    return "0,0,0";
-  };
-
-  const handleHexChange = (hex: string) => {
-    setFormData({
-      ...formData,
-      hex,
-      rgb: hexToRgb(hex),
-    });
-  };
-
-  const handleCreate = async () => {
-    setSaving(true);
-    try {
-      const res = await fetch("/api/admin/colors", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
-      if (res.ok) {
-        setIsCreateOpen(false);
+      const res = await createColor(formData);
+      if (res.success && res.color) {
+        // We need to fetch again or manually construct the color object with series
+        // For simplicity, let's fetch data again to get the relation
+        await fetchData();
+        setIsAddOpen(false);
         resetForm();
-        fetchColors();
+        toast.success("Color created successfully");
+      } else {
+        toast.error("Failed to create color");
       }
     } catch (error) {
-      console.error("Failed to create color:", error);
+      console.error("Failed to add color:", error);
+      toast.error("An error occurred");
     } finally {
-      setSaving(false);
+      setSubmitting(false);
     }
   };
 
   const handleEdit = async () => {
     if (!selectedColor) return;
-    setSaving(true);
+    setSubmitting(true);
     try {
-      const res = await fetch(`/api/admin/colors/${selectedColor.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
-      if (res.ok) {
+      const res = await updateColor(selectedColor.id, formData);
+
+      if (res.success) {
+        await fetchData();
         setIsEditOpen(false);
         setSelectedColor(null);
         resetForm();
-        fetchColors();
+        toast.success("Color updated successfully");
+      } else {
+        toast.error("Failed to update color");
       }
     } catch (error) {
       console.error("Failed to update color:", error);
+      toast.error("An error occurred");
     } finally {
-      setSaving(false);
+      setSubmitting(false);
     }
   };
 
   const handleDelete = async () => {
     if (!selectedColor) return;
-    setSaving(true);
+    setSubmitting(true);
     try {
-      const res = await fetch(`/api/admin/colors/${selectedColor.id}`, {
-        method: "DELETE",
-      });
-      if (res.ok) {
+      const res = await deleteColor(selectedColor.id);
+
+      if (res.success) {
+        setColors(colors.filter((c) => c.id !== selectedColor.id));
         setIsDeleteOpen(false);
         setSelectedColor(null);
-        fetchColors();
+        toast.success("Color deleted successfully");
+      } else {
+        toast.error("Failed to delete color");
       }
     } catch (error) {
       console.error("Failed to delete color:", error);
+      toast.error("An error occurred");
     } finally {
-      setSaving(false);
+      setSubmitting(false);
     }
   };
 
   const resetForm = () => {
     setFormData({
       name: "",
-      hex: "#000000",
-      rgb: "0,0,0",
+      hex: "",
+      rgb: "",
       description: "",
       buyLink: "",
+      badge: "",
+      status: "",
       seriesId: "",
     });
   };
 
-  const openEditDialog = (c: Color) => {
-    setSelectedColor(c);
+  const openEdit = (color: Color) => {
+    setSelectedColor(color);
     setFormData({
-      name: c.name,
-      hex: c.hex,
-      rgb: c.rgb,
-      description: c.description || "",
-      buyLink: c.buyLink || "",
-      seriesId: c.seriesId,
+      name: color.name,
+      hex: color.hex,
+      rgb: color.rgb,
+      description: color.description || "",
+      buyLink: color.buyLink || "",
+      badge: color.badge || "",
+      status: color.status || "",
+      seriesId: color.seriesId,
     });
     setIsEditOpen(true);
   };
 
-  const openDeleteDialog = (c: Color) => {
-    setSelectedColor(c);
-    setIsDeleteOpen(true);
-  };
+  const filteredColors = colors.filter(
+    (color) =>
+      color.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      color.series?.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   if (loading) {
     return (
@@ -245,51 +240,53 @@ export default function ColorsManagement() {
   }
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <div>
-          <CardTitle>Colors Management</CardTitle>
-          <CardDescription>Manage individual paint colors</CardDescription>
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div className="relative w-72">
+          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search colors..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-8"
+          />
         </div>
-        <div className="flex items-center gap-4">
-          <Select value={filterSeriesId} onValueChange={setFilterSeriesId}>
-            <SelectTrigger className="w-48">
-              <SelectValue placeholder="Filter by series" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Series</SelectItem>
-              {series.map((s) => (
-                <SelectItem key={s.id} value={s.id}>
-                  {s.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="mr-2 h-4 w-4" />
-                Add Color
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-md">
-              <DialogHeader>
-                <DialogTitle>Create New Color</DialogTitle>
-                <DialogDescription>
-                  Add a new paint color to the collection
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4 py-4">
+        <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
+          <DialogTrigger asChild>
+            <Button onClick={resetForm}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Color
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Add New Color</DialogTitle>
+              <DialogDescription>
+                Add a new color to the catalog
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Name *</Label>
+                  <Input
+                    id="name"
+                    value={formData.name}
+                    onChange={(e) =>
+                      setFormData({ ...formData, name: e.target.value })
+                    }
+                  />
+                </div>
                 <div className="space-y-2">
                   <Label htmlFor="series">Series *</Label>
                   <Select
                     value={formData.seriesId}
-                    onValueChange={(v) =>
-                      setFormData({ ...formData, seriesId: v })
+                    onValueChange={(val) =>
+                      setFormData({ ...formData, seriesId: val })
                     }
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select a series" />
+                      <SelectValue placeholder="Select series" />
                     </SelectTrigger>
                     <SelectContent>
                       {series.map((s) => (
@@ -300,228 +297,244 @@ export default function ColorsManagement() {
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="name">Name *</Label>
-                  <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={(e) =>
-                      setFormData({ ...formData, name: e.target.value })
-                    }
-                    placeholder="e.g., Crimson Red"
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="hex">Hex Color *</Label>
-                    <div className="flex gap-2">
-                      <Input
-                        id="hex"
-                        type="color"
-                        value={formData.hex}
-                        onChange={(e) => handleHexChange(e.target.value)}
-                        className="w-12 h-10 p-1 cursor-pointer"
-                      />
-                      <Input
-                        value={formData.hex}
-                        onChange={(e) => handleHexChange(e.target.value)}
-                        placeholder="#000000"
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="rgb">RGB *</Label>
+                  <Label htmlFor="hex">HEX Code *</Label>
+                  <div className="flex gap-2">
+                    <div
+                      className="w-10 h-10 rounded border shrink-0"
+                      style={{
+                        backgroundColor: /^#[0-9A-Fa-f]{6}$/.test(formData.hex)
+                          ? formData.hex
+                          : "transparent",
+                      }}
+                    />
                     <Input
-                      id="rgb"
-                      value={formData.rgb}
+                      id="hex"
+                      value={formData.hex}
                       onChange={(e) =>
-                        setFormData({ ...formData, rgb: e.target.value })
+                        setFormData({ ...formData, hex: e.target.value })
                       }
-                      placeholder="0,0,0"
+                      placeholder="#000000"
                     />
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="buyLink">Buy Link</Label>
+                  <Label htmlFor="rgb">RGB Values *</Label>
                   <Input
-                    id="buyLink"
-                    value={formData.buyLink}
+                    id="rgb"
+                    value={formData.rgb}
                     onChange={(e) =>
-                      setFormData({ ...formData, buyLink: e.target.value })
+                      setFormData({ ...formData, rgb: e.target.value })
                     }
-                    placeholder="https://..."
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="description">Description</Label>
-                  <Textarea
-                    id="description"
-                    value={formData.description}
-                    onChange={(e) =>
-                      setFormData({ ...formData, description: e.target.value })
-                    }
-                    placeholder="Describe this color..."
+                    placeholder="0,0,0"
                   />
                 </div>
               </div>
-              <DialogFooter>
-                <Button
-                  variant="outline"
-                  onClick={() => setIsCreateOpen(false)}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleCreate}
-                  disabled={
-                    !formData.name ||
-                    !formData.hex ||
-                    !formData.rgb ||
-                    !formData.seriesId ||
-                    saving
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="badge">Badge (Optional)</Label>
+                  <Input
+                    id="badge"
+                    value={formData.badge}
+                    onChange={(e) =>
+                      setFormData({ ...formData, badge: e.target.value })
+                    }
+                    placeholder="e.g., New, Popular"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="status">Status (Optional)</Label>
+                  <Select
+                    value={formData.status}
+                    onValueChange={(val) =>
+                      setFormData({ ...formData, status: val })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="available">Available</SelectItem>
+                      <SelectItem value="out_of_stock">Out of Stock</SelectItem>
+                      <SelectItem value="discontinued">Discontinued</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="buyLink">Buy Link (Optional)</Label>
+                <Input
+                  id="buyLink"
+                  value={formData.buyLink}
+                  onChange={(e) =>
+                    setFormData({ ...formData, buyLink: e.target.value })
                   }
-                >
-                  {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Create
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        </div>
-      </CardHeader>
-      <CardContent>
+                  placeholder="https://..."
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="description">Description (Optional)</Label>
+                <Textarea
+                  id="description"
+                  value={formData.description}
+                  onChange={(e) =>
+                    setFormData({ ...formData, description: e.target.value })
+                  }
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsAddOpen(false)}>
+                Cancel
+              </Button>
+              <Button
+                onClick={handleAdd}
+                disabled={
+                  !formData.name ||
+                  !formData.hex ||
+                  !formData.rgb ||
+                  !formData.seriesId ||
+                  submitting
+                }
+              >
+                {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Add Color
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      <div className="rounded-md border">
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Color</TableHead>
               <TableHead>Name</TableHead>
               <TableHead>Series</TableHead>
-              <TableHead>Hex / RGB</TableHead>
-              <TableHead>Buy Link</TableHead>
+              <TableHead>Badge</TableHead>
+              <TableHead>Status</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {colors.length === 0 ? (
-              <TableRow>
-                <TableCell
-                  colSpan={6}
-                  className="text-center text-muted-foreground"
-                >
-                  No colors found. Create your first color!
+            {filteredColors.map((color) => (
+              <TableRow key={color.id}>
+                <TableCell>
+                  <div
+                    className="w-8 h-8 rounded-full border"
+                    style={{ backgroundColor: color.hex }}
+                  />
+                </TableCell>
+                <TableCell className="font-medium">
+                  {color.name}
+                  <div className="text-xs text-muted-foreground font-mono">
+                    {color.hex}
+                  </div>
+                </TableCell>
+                <TableCell>{color.series?.name}</TableCell>
+                <TableCell>
+                  {color.badge && (
+                    <Badge variant="secondary">{color.badge}</Badge>
+                  )}
+                </TableCell>
+                <TableCell>
+                  {color.status && (
+                    <Badge variant="outline" className="capitalize">
+                      {color.status.replace("_", " ")}
+                    </Badge>
+                  )}
+                </TableCell>
+                <TableCell className="text-right">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => openEdit(color)}
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => {
+                      setSelectedColor(color);
+                      setIsDeleteOpen(true);
+                    }}
+                  >
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
                 </TableCell>
               </TableRow>
-            ) : (
-              colors.map((c) => (
-                <TableRow key={c.id}>
-                  <TableCell>
-                    <div
-                      className="w-10 h-10 rounded-md border shadow-sm"
-                      style={{ backgroundColor: c.hex }}
-                    />
-                  </TableCell>
-                  <TableCell className="font-medium">{c.name}</TableCell>
-                  <TableCell>
-                    <Badge variant="secondary">{c.series.name}</Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className="text-sm">
-                      <div>{c.hex}</div>
-                      <div className="text-muted-foreground">RGB: {c.rgb}</div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    {c.buyLink ? (
-                      <a
-                        href={c.buyLink}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center text-primary hover:underline"
-                      >
-                        <ExternalLink className="h-4 w-4" />
-                      </a>
-                    ) : (
-                      "—"
-                    )}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => openEditDialog(c)}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => openDeleteDialog(c)}
-                    >
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
+            ))}
           </TableBody>
         </Table>
-      </CardContent>
+      </div>
 
       {/* Edit Dialog */}
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Edit Color</DialogTitle>
-            <DialogDescription>Update color information</DialogDescription>
+            <DialogDescription>Edit color details</DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="edit-series">Series *</Label>
-              <Select
-                value={formData.seriesId}
-                onValueChange={(v) => setFormData({ ...formData, seriesId: v })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {series.map((s) => (
-                    <SelectItem key={s.id} value={s.id}>
-                      {s.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-name">Name *</Label>
-              <Input
-                id="edit-name"
-                value={formData.name}
-                onChange={(e) =>
-                  setFormData({ ...formData, name: e.target.value })
-                }
-              />
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-name">Name *</Label>
+                <Input
+                  id="edit-name"
+                  value={formData.name}
+                  onChange={(e) =>
+                    setFormData({ ...formData, name: e.target.value })
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-series">Series *</Label>
+                <Select
+                  value={formData.seriesId}
+                  onValueChange={(val) =>
+                    setFormData({ ...formData, seriesId: val })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select series" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {series.map((s) => (
+                      <SelectItem key={s.id} value={s.id}>
+                        {s.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="edit-hex">Hex Color *</Label>
+                <Label htmlFor="edit-hex">HEX Code *</Label>
                 <div className="flex gap-2">
-                  <Input
-                    id="edit-hex"
-                    type="color"
-                    value={formData.hex}
-                    onChange={(e) => handleHexChange(e.target.value)}
-                    className="w-12 h-10 p-1 cursor-pointer"
+                  <div
+                    className="w-10 h-10 rounded border shrink-0"
+                    style={{
+                      backgroundColor: /^#[0-9A-Fa-f]{6}$/.test(formData.hex)
+                        ? formData.hex
+                        : "transparent",
+                    }}
                   />
                   <Input
+                    id="edit-hex"
                     value={formData.hex}
-                    onChange={(e) => handleHexChange(e.target.value)}
+                    onChange={(e) =>
+                      setFormData({ ...formData, hex: e.target.value })
+                    }
                   />
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="edit-rgb">RGB *</Label>
+                <Label htmlFor="edit-rgb">RGB Values *</Label>
                 <Input
                   id="edit-rgb"
                   value={formData.rgb}
@@ -531,8 +544,39 @@ export default function ColorsManagement() {
                 />
               </div>
             </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-badge">Badge (Optional)</Label>
+                <Input
+                  id="edit-badge"
+                  value={formData.badge}
+                  onChange={(e) =>
+                    setFormData({ ...formData, badge: e.target.value })
+                  }
+                  placeholder="e.g., New, Popular"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-status">Status (Optional)</Label>
+                <Select
+                  value={formData.status}
+                  onValueChange={(val) =>
+                    setFormData({ ...formData, status: val })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="available">Available</SelectItem>
+                    <SelectItem value="out_of_stock">Out of Stock</SelectItem>
+                    <SelectItem value="discontinued">Discontinued</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-buyLink">Buy Link</Label>
+              <Label htmlFor="edit-buyLink">Buy Link (Optional)</Label>
               <Input
                 id="edit-buyLink"
                 value={formData.buyLink}
@@ -542,7 +586,7 @@ export default function ColorsManagement() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-description">Description</Label>
+              <Label htmlFor="edit-description">Description (Optional)</Label>
               <Textarea
                 id="edit-description"
                 value={formData.description}
@@ -563,24 +607,24 @@ export default function ColorsManagement() {
                 !formData.hex ||
                 !formData.rgb ||
                 !formData.seriesId ||
-                saving
+                submitting
               }
             >
-              {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Save Changes
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation */}
+      {/* Delete Alert */}
       <AlertDialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Color</AlertDialogTitle>
+            <DialogTitle>Are you sure?</DialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete &quot;{selectedColor?.name}&quot;?
-              This action cannot be undone.
+              This action cannot be undone. This will permanently delete the color
+              &quot;{selectedColor?.name}&quot; and remove it from our servers.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -589,12 +633,12 @@ export default function ColorsManagement() {
               onClick={handleDelete}
               className="bg-destructive text-destructive-foreground"
             >
-              {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </Card>
+    </div>
   );
 }

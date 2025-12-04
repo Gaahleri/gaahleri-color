@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Card,
@@ -11,6 +10,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Loader2, Save, Globe } from "lucide-react";
 
 interface UserProfile {
@@ -20,6 +26,18 @@ interface UserProfile {
   name: string | null;
   country: string | null;
 }
+
+const COUNTRIES = [
+  "United States",
+  "Canada",
+  "United Kingdom",
+  "Germany",
+  "France",
+  "Japan",
+  "China",
+  "Australia",
+  "Other",
+];
 
 export default function CountryInput() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -87,7 +105,7 @@ export default function CountryInput() {
           Your Location
         </CardTitle>
         <CardDescription>
-          Tell us your country to help us improve our service (optional)
+          Select your country to help us improve our service
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -96,14 +114,20 @@ export default function CountryInput() {
             <Label htmlFor="country" className="sr-only">
               Country
             </Label>
-            <Input
-              id="country"
-              value={country}
-              onChange={(e) => setCountry(e.target.value)}
-              placeholder="Enter your country (e.g., United States, China, Japan)"
-            />
+            <Select value={country} onValueChange={setCountry}>
+              <SelectTrigger id="country">
+                <SelectValue placeholder="Select your country" />
+              </SelectTrigger>
+              <SelectContent>
+                {COUNTRIES.map((c) => (
+                  <SelectItem key={c} value={c}>
+                    {c}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-          <Button onClick={handleSave} disabled={saving}>
+          <Button onClick={handleSave} disabled={saving || !country}>
             {saving ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             ) : (
@@ -115,11 +139,6 @@ export default function CountryInput() {
         {saved && (
           <p className="text-sm text-green-600 mt-2">
             Country saved successfully!
-          </p>
-        )}
-        {profile?.country && (
-          <p className="text-sm text-muted-foreground mt-2">
-            Current: {profile.country}
           </p>
         )}
       </CardContent>

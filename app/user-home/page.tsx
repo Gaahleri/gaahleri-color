@@ -10,7 +10,6 @@ import {
   ArrowRight,
 } from "lucide-react";
 import CountryInput from "@/components/country-input";
-import ColorCollection from "@/components/color-collection";
 
 export default async function UserHomePage() {
   const { userId } = await auth();
@@ -27,8 +26,10 @@ export default async function UserHomePage() {
           <h1 className="text-4xl md:text-6xl font-bold bg-linear-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
             Welcome to Your Color Studio
           </h1>
-          <p className="text-xl text-muted-foreground">
-            Start creating beautiful color combinations with Gaahleri paints
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+            This is your personal space to explore the world of Gaahleri pigments. 
+            Here you can manage your color library, simulate realistic color mixing, 
+            and discover new possibilities for your artwork.
           </p>
         </div>
 
@@ -37,10 +38,7 @@ export default async function UserHomePage() {
           <CountryInput />
         </div>
 
-        {/* Color Collection */}
-        <div className="max-w-4xl mx-auto mb-12">
-          <ColorCollection />
-        </div>
+
 
         {/* Quick Actions Grid */}
         <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto mb-16">

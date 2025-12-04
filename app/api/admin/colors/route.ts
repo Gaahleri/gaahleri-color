@@ -34,7 +34,7 @@ export async function POST(req: Request) {
     await requireAdmin();
 
     const body = await req.json();
-    const { name, hex, rgb, description, buyLink, seriesId } = body;
+    const { name, hex, rgb, description, buyLink, badge, status, seriesId } = body;
 
     if (!name || !hex || !rgb || !seriesId) {
       return NextResponse.json(
@@ -50,6 +50,8 @@ export async function POST(req: Request) {
         rgb,
         description: description || null,
         buyLink: buyLink || null,
+        badge: badge || null,
+        status: status || null,
         seriesId,
       },
       include: {

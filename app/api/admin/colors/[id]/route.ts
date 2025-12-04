@@ -41,7 +41,7 @@ export async function PUT(
     await requireAdmin();
     const { id } = await params;
     const body = await req.json();
-    const { name, hex, rgb, description, buyLink, seriesId } = body;
+    const { name, hex, rgb, description, buyLink, badge, status, seriesId } = body;
 
     const color = await prisma.color.update({
       where: { id },
@@ -51,6 +51,8 @@ export async function PUT(
         rgb,
         description: description || null,
         buyLink: buyLink || null,
+        badge: badge || null,
+        status: status || null,
         seriesId,
       },
       include: {

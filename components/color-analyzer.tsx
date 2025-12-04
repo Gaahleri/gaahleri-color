@@ -354,44 +354,59 @@ export default function ColorAnalyzer() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                   {closestMatches.map((match) => (
                     <div
                       key={match.id}
-                      className="flex items-center gap-4 p-4 border rounded-lg"
+                      className="group relative border rounded-lg overflow-hidden hover:shadow-md transition-all"
                     >
                       <div
-                        className="w-16 h-16 rounded-lg border shadow"
+                        className="h-32 w-full"
                         style={{ backgroundColor: match.hex }}
                       />
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <h4 className="font-medium">{match.name}</h4>
-                          <Badge variant="secondary">{match.series.name}</Badge>
-                          <Badge
-                            variant={
-                              match.matchPercentage > 80 ? "default" : "outline"
-                            }
-                          >
-                            {match.matchPercentage}% match
+                      <div className="p-4 space-y-3">
+                        <div>
+                          <div className="flex items-center justify-between mb-1">
+                            <h4 className="font-medium truncate" title={match.name}>
+                              {match.name}
+                            </h4>
+                            <Badge
+                              variant={
+                                match.matchPercentage > 90
+                                  ? "default"
+                                  : match.matchPercentage > 80
+                                  ? "secondary"
+                                  : "outline"
+                              }
+                            >
+                              {match.matchPercentage}%
+                            </Badge>
+                          </div>
+                          <Badge variant="outline" className="text-xs">
+                            {match.series.name}
                           </Badge>
                         </div>
-                        <p className="text-sm text-muted-foreground font-mono">
-                          {match.hex} | RGB: {match.rgb}
-                        </p>
+                        
+                        <div className="text-xs text-muted-foreground font-mono">
+                          {match.hex}
+                          <br />
+                          RGB: {match.rgb}
+                        </div>
+
+                        {match.buyLink && (
+                          <a
+                            href={match.buyLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="block"
+                          >
+                            <Button variant="outline" size="sm" className="w-full">
+                              <ShoppingCart className="h-3 w-3 mr-2" />
+                              Buy Now
+                            </Button>
+                          </a>
+                        )}
                       </div>
-                      {match.buyLink && (
-                        <a
-                          href={match.buyLink}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          <Button variant="outline" size="sm">
-                            <ShoppingCart className="h-4 w-4 mr-1" />
-                            Buy
-                          </Button>
-                        </a>
-                      )}
                     </div>
                   ))}
                 </div>
