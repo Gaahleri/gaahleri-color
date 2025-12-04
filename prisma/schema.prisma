@@ -4,6 +4,7 @@
 generator client {
   provider = "prisma-client-js"
 }
+
 //忽略这个错误，因为我把prisma降到了prisma6
 datasource db {
   provider = "postgresql"
@@ -35,11 +36,12 @@ model Color {
   rgb         String // RGB values e.g., "255,0,0"
   description String? @db.Text
   buyLink     String? // Link to purchase this specific color
+  badge       String? // Badge for the color
+  status      String? // Status of the color
+  seriesId    String
+  series      Series  @relation(fields: [seriesId], references: [id], onDelete: Cascade)
 
-  seriesId String
-  series   Series @relation(fields: [seriesId], references: [id], onDelete: Cascade)
-
-  userRecords      UserRecord[] // Users who saved/liked this color
+  userRecords       UserRecord[] // Users who saved/liked this color
   recipeIngredients RecipeIngredient[] // This color used in recipes
 
   createdAt DateTime @default(now())
@@ -56,7 +58,7 @@ model User {
   email    String   @unique
   name     String?
   imageUrl String?
-  country  String?  // User's country (optional)
+  country  String? // User's country (optional)
   role     UserRole @default(USER) // USER or ADMIN
 
   userRecords UserRecord[] // Colors saved by user
@@ -79,8 +81,8 @@ model UserRecord {
   colorId String
   color   Color  @relation(fields: [colorId], references: [id], onDelete: Cascade)
 
-  note       String?  @db.Text // Optional user note
-  isFavorite Boolean  @default(false) // Mark as favorite
+  note       String? @db.Text // Optional user note
+  isFavorite Boolean @default(false) // Mark as favorite
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -128,4 +130,3 @@ model RecipeIngredient {
   @@index([recipeId])
   @@index([colorId])
 }
-
