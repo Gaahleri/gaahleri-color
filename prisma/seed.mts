@@ -1,5 +1,5 @@
 // Prisma 7 ESM seed script
-import { PrismaClient } from "../lib/generated/prisma/client.ts";
+import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
