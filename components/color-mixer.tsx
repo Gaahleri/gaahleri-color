@@ -611,20 +611,21 @@ export default function ColorMixer() {
       <AlertDialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>确认删除</AlertDialogTitle>
+            <AlertDialogTitle>Delete Confirmation</AlertDialogTitle>
             <AlertDialogDescription>
-              确定要从您的收藏中删除 &quot;{colorToDelete?.name}&quot; 吗？此操作无法撤销。
+              Are you sure you want to delete &quot;{colorToDelete?.name}&quot;
+              from your favorites? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setColorToDelete(null)}>
-              取消
+              Cancel
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmDelete}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              删除
+              Delete
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

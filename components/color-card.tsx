@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Check, ShoppingCart, Trash2 } from "lucide-react";
+import { Plus, Palette, ShoppingCart, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface ColorData {
@@ -77,7 +77,7 @@ export default function ColorCard({
               size="icon"
               className={cn(
                 "h-7 w-7 rounded-full shadow-sm",
-                isSaved && "bg-green-500 hover:bg-green-500 cursor-default"
+                isSaved && "cursor-default"
               )}
               onClick={(e) => {
                 if (!isSaved) {
@@ -90,7 +90,7 @@ export default function ColorCard({
               aria-label={isSaved ? "Saved to library" : "Add to library"}
             >
               {isSaved ? (
-                <Check className="h-3.5 w-3.5 text-white" />
+                <Palette className="h-3.5 w-3.5" />
               ) : (
                 <Plus className="h-3.5 w-3.5" />
               )}
