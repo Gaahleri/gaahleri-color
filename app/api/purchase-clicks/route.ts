@@ -16,12 +16,16 @@ export async function POST(request: NextRequest) {
 
     // Get user ID if logged in (optional)
     const { userId } = await auth();
+    
+    // Get country from Vercel header
+    const country = request.headers.get("x-vercel-ip-country");
 
     // Create the purchase click record
     const purchaseClick = await prisma.purchaseClick.create({
       data: {
         colorId,
         userId: userId || null,
+        country: country || null,
       },
     });
 

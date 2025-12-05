@@ -9,7 +9,7 @@ import { Palette, List, BarChart3, ShoppingCart } from "lucide-react";
 
 export default function AdminTabs() {
   return (
-    <Tabs defaultValue="series" className="space-y-6">
+    <Tabs defaultValue="series" className="space-y-6" id="admin-tabs">
       <TabsList className="grid w-full grid-cols-4 max-w-lg">
         <TabsTrigger value="series" className="flex items-center gap-2">
           <Palette className="h-4 w-4" />

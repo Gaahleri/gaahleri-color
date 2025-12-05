@@ -45,6 +45,7 @@ interface PurchaseStatsData {
   totalClicks: number;
   colors: PurchaseColor[];
   availableMonths: string[];
+  availableCountries: string[];
 }
 
 const MONTH_NAMES = [
@@ -69,8 +70,10 @@ export default function PurchaseStats() {
   const [selectedYear, setSelectedYear] = useState(currentYear);
   const [selectedMonth, setSelectedMonth] = useState(currentMonth);
 
+  const [selectedCountry, setSelectedCountry] = useState<string>("all");
+
   const { data, isLoading, error } = useSWR<PurchaseStatsData>(
-    `/api/admin/stats/purchases?year=${selectedYear}&month=${selectedMonth}`,
+    `/api/admin/stats/purchases?year=${selectedYear}&month=${selectedMonth}&country=${selectedCountry}`,
     fetcher,
     {
       revalidateOnFocus: false,
@@ -129,21 +132,39 @@ export default function PurchaseStats() {
               Track how many times users click the buy button for each color
             </CardDescription>
           </div>
-          <Select
-            value={`${selectedYear}-${selectedMonth}`}
-            onValueChange={handleMonthChange}
-          >
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Select month" />
-            </SelectTrigger>
-            <SelectContent>
-              {monthOptions.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex gap-2">
+            <Select
+              value={selectedCountry}
+              onValueChange={setSelectedCountry}
+            >
+              <SelectTrigger className="w-[150px]">
+                <SelectValue placeholder="All Countries" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Countries</SelectItem>
+                {data?.availableCountries?.map((country) => (
+                  <SelectItem key={country} value={country}>
+                    {country}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select
+              value={`${selectedYear}-${selectedMonth}`}
+              onValueChange={handleMonthChange}
+            >
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Select month" />
+              </SelectTrigger>
+              <SelectContent>
+                {monthOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </CardHeader>
       <CardContent>

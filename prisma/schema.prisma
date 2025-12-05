@@ -147,11 +147,13 @@ model PurchaseClick {
   colorId String
   color   Color  @relation(fields: [colorId], references: [id], onDelete: Cascade)
 
-  userId String? // Optional: Clerk user ID if logged in, null for anonymous
+  userId  String? // Optional: Clerk user ID if logged in, null for anonymous
+  country String? // Country code detected from IP
 
   createdAt DateTime @default(now())
 
   @@index([colorId])
   @@index([userId])
+  @@index([country]) // For filtering by country
   @@index([createdAt]) // For monthly filtering
 }

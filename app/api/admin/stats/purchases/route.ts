@@ -15,9 +15,23 @@ export async function GET(request: NextRequest) {
       searchParams.get("month") || (new Date().getMonth() + 1).toString()
     );
 
+    const country = searchParams.get("country");
+
     // Calculate date range for the specified month
     const startDate = new Date(year, month - 1, 1);
     const endDate = new Date(year, month, 0, 23, 59, 59, 999);
+
+    // Build where clause
+    const whereClause: any = {
+      createdAt: {
+        gte: startDate,
+        lte: endDate,
+      },
+    };
+
+    if (country && country !== "all") {
+      whereClause.country = country;
+    }
 
     // Get aggregated purchase clicks for the month grouped by color
     const purchaseStats = await prisma.purchaseClick.groupBy({
@@ -25,12 +39,7 @@ export async function GET(request: NextRequest) {
       _count: {
         colorId: true,
       },
-      where: {
-        createdAt: {
-          gte: startDate,
-          lte: endDate,
-        },
-      },
+      where: whereClause,
       orderBy: {
         _count: {
           colorId: "desc",
@@ -88,6 +97,18 @@ export async function GET(request: NextRequest) {
     });
     const months = Array.from(monthsSet).sort().reverse();
 
+    // Get available countries
+    const countriesResult = await prisma.purchaseClick.groupBy({
+      by: ["country"],
+      where: {
+        country: { not: null },
+      },
+    });
+    const countries = countriesResult
+      .map((c) => c.country)
+      .filter(Boolean)
+      .sort();
+
     return NextResponse.json(
       {
         year,
@@ -95,6 +116,7 @@ export async function GET(request: NextRequest) {
         totalClicks,
         colors: result,
         availableMonths: months,
+        availableCountries: countries,
       },
       {
         headers: {

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import useSWR from "swr";
 import { fetcher } from "@/lib/fetcher";
 import {
@@ -9,6 +10,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, TrendingUp } from "lucide-react";
 
@@ -24,16 +32,25 @@ interface TopColor {
   addCount: number;
 }
 
+interface TopColorsData {
+  topColors: TopColor[];
+  availableCountries: string[];
+}
+
 export default function TopColorsStats() {
+  const [selectedCountry, setSelectedCountry] = useState<string>("all");
+
   // 使用 SWR 进行数据缓存
-  const { data: topColors = [], isLoading: loading } = useSWR<TopColor[]>(
-    "/api/admin/stats/top-colors",
+  const { data, isLoading: loading } = useSWR<TopColorsData>(
+    `/api/admin/stats/top-colors?country=${selectedCountry}`,
     fetcher,
     {
       revalidateOnFocus: false,
       dedupingInterval: 60000, // 统计数据 60 秒内不重复请求
     }
   );
+
+  const topColors = data?.topColors || [];
 
   if (loading) {
     return (
@@ -54,13 +71,33 @@ export default function TopColorsStats() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <TrendingUp className="h-5 w-5" />
-          Top 10 Colors (Last 30 Days)
-        </CardTitle>
-        <CardDescription>
-          Most saved colors by users in the past month
-        </CardDescription>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5" />
+              Top 10 Colors (Last 30 Days)
+            </CardTitle>
+            <CardDescription>
+              Most saved colors by users in the past month
+            </CardDescription>
+          </div>
+          <Select
+            value={selectedCountry}
+            onValueChange={setSelectedCountry}
+          >
+            <SelectTrigger className="w-[150px]">
+              <SelectValue placeholder="All Countries" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Countries</SelectItem>
+              {data?.availableCountries?.map((country) => (
+                <SelectItem key={country} value={country}>
+                  {country}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </CardHeader>
       <CardContent>
         {topColors.length === 0 ? (

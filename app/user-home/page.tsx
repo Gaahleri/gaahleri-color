@@ -34,9 +34,9 @@ export default async function UserHomePage() {
         </div>
 
         {/* Profile Section */}
-        <div className="max-w-2xl mx-auto mb-12">
+        {/* <div className="max-w-2xl mx-auto mb-12">
           <CountryInput />
-        </div>
+        </div> */}
 
 
 

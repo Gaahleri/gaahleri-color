@@ -19,7 +19,7 @@ export default async function DashboardPage() {
         </div>
 
         {/* Tabs */}
-        <Tabs defaultValue="mixes" className="w-full">
+        <Tabs defaultValue="mixes" className="w-full" id="dashboard-tabs">
           <TabsList className="grid w-full grid-cols-2 mb-8 max-w-md">
             <TabsTrigger value="mixes" className="flex items-center space-x-2">
               <Palette className="w-4 h-4" />

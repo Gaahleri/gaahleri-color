@@ -54,31 +54,65 @@ export default function CountryInput() {
   const [country, setCountry] = useState("");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [detecting, setDetecting] = useState(false);
 
   // 当 profile 加载完成后，设置 country 值
   useEffect(() => {
     if (profile) {
       setCountry(profile.country || "");
+      
+      // 如果用户没有设置国家，尝试自动检测
+      if (!profile.country) {
+        detectAndSaveCountry();
+      }
     }
   }, [profile]);
+
+  const detectAndSaveCountry = async () => {
+    setDetecting(true);
+    try {
+      const res = await fetch("/api/user/detect-country");
+      if (res.ok) {
+        const data = await res.json();
+        if (data.country) {
+          // 自动保存检测到的国家
+          await saveCountry(data.country);
+          setCountry(data.country);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to detect country:", error);
+    } finally {
+      setDetecting(false);
+    }
+  };
+
+  const saveCountry = async (countryToSave: string) => {
+    try {
+      const res = await fetch("/api/user/profile", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ country: countryToSave || null }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        mutateProfile(data, false);
+      }
+    } catch (error) {
+      console.error("Failed to save country:", error);
+      throw error;
+    }
+  };
 
   const handleSave = async () => {
     setSaving(true);
     setSaved(false);
     try {
-      const res = await fetch("/api/user/profile", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ country: country || null }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        mutateProfile(data, false);
-        setSaved(true);
-        setTimeout(() => setSaved(false), 3000);
-      }
+      await saveCountry(country);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
     } catch (error) {
-      console.error("Failed to save country:", error);
+      // Error handled in saveCountry
     } finally {
       setSaving(false);
     }
@@ -102,7 +136,9 @@ export default function CountryInput() {
           Your Location
         </CardTitle>
         <CardDescription>
-          Select your country to help us improve our service
+          {detecting 
+            ? "Detecting your location..." 
+            : "We use your location to provide better statistics. You can update it below."}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -136,6 +172,12 @@ export default function CountryInput() {
         {saved && (
           <p className="text-sm text-green-600 mt-2">
             Country saved successfully!
+          </p>
+        )}
+        {detecting && (
+          <p className="text-xs text-muted-foreground mt-2 flex items-center">
+            <Loader2 className="h-3 w-3 animate-spin mr-1" />
+            Auto-detecting location...
           </p>
         )}
       </CardContent>
