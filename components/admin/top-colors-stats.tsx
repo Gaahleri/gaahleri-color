@@ -127,6 +127,19 @@ export default function TopColorsStats() {
                     </Badge>
                     <span>{color.hex}</span>
                   </div>
+                  {color.buyLink && (
+                    <div className="text-xs text-muted-foreground truncate max-w-[300px] mt-1">
+                      <span className="font-semibold">Link: </span>
+                      <a
+                        href={color.buyLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-500 hover:underline"
+                      >
+                        {color.buyLink}
+                      </a>
+                    </div>
+                  )}
                 </div>
                 <div className="text-right">
                   <div className="text-2xl font-bold text-primary">

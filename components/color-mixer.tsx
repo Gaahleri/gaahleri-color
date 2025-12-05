@@ -184,63 +184,77 @@ export default function ColorMixer() {
     setIngredients(ingredients.filter((ing) => ing.color.id !== colorId));
   };
 
+  const [processingIds, setProcessingIds] = useState<Set<string>>(new Set());
+
   const handleToggleSaveColor = async (colorId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    const previous = userRecords || [];
-    const isSaved = savedColorIds.has(colorId);
+    if (processingIds.has(colorId)) return;
 
-    if (isSaved) {
-      // 乐观更新：从本地移除 colorId
-      const optimistic = previous.filter((r) => r.colorId !== colorId);
-      try {
-        mutateRecords(optimistic, false);
+    setProcessingIds((prev) => new Set(prev).add(colorId));
 
-        const res = await fetch(`/api/user/colors/by-color-id/${colorId}`, {
-          method: "DELETE",
-        });
+    try {
+      const previous = userRecords || [];
+      const isSaved = savedColorIds.has(colorId);
 
-        if (res.ok) {
-          await mutateRecords();
-          toast.success("Color removed from library");
-        } else {
+      if (isSaved) {
+        // 乐观更新：从本地移除 colorId
+        const optimistic = previous.filter((r) => r.colorId !== colorId);
+        try {
+          mutateRecords(optimistic, false);
+
+          const res = await fetch(`/api/user/colors/by-color-id/${colorId}`, {
+            method: "DELETE",
+          });
+
+          if (res.ok || res.status === 404) {
+            await mutateRecords();
+            // Silent success
+          } else {
+            mutateRecords(previous, false);
+            console.error("Failed to remove color, status:", res.status);
+            toast.error("Failed to remove color");
+          }
+        } catch (error) {
           mutateRecords(previous, false);
-          console.error("Failed to remove color, status:", res.status);
+          console.error("Failed to remove color:", error);
           toast.error("Failed to remove color");
         }
-      } catch (error) {
-        mutateRecords(previous, false);
-        console.error("Failed to remove color:", error);
-        toast.error("Failed to remove color");
-      }
-    } else {
-      // 乐观更新：先在本地把 colorId 添加到 userRecords，失败时回滚并提示
-      const optimistic = [...previous, { colorId }];
-      try {
-        // Apply optimistic update without revalidation
-        mutateRecords(optimistic, false);
+      } else {
+        // 乐观更新：先在本地把 colorId 添加到 userRecords，失败时回滚并提示
+        const optimistic = [...previous, { colorId }];
+        try {
+          // Apply optimistic update without revalidation
+          mutateRecords(optimistic, false);
 
-        const res = await fetch("/api/user/colors", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ colorId }),
-        });
+          const res = await fetch("/api/user/colors", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ colorId }),
+          });
 
-        if (res.ok) {
-          // 成功：后台重新验证并替换为真实数据
-          await mutateRecords();
-          toast.success("Color added to library");
-        } else {
-          // 失败：回滚并提示错误
+          if (res.ok) {
+            // 成功：后台重新验证并替换为真实数据
+            await mutateRecords();
+            // Silent success
+          } else {
+            // 失败：回滚并提示错误
+            mutateRecords(previous, false);
+            console.error("Failed to save color, status:", res.status);
+            toast.error("Failed to save color");
+          }
+        } catch (error) {
+          // 回滚并提示错误
           mutateRecords(previous, false);
-          console.error("Failed to save color, status:", res.status);
+          console.error("Failed to save color:", error);
           toast.error("Failed to save color");
         }
-      } catch (error) {
-        // 回滚并提示错误
-        mutateRecords(previous, false);
-        console.error("Failed to save color:", error);
-        toast.error("Failed to save color");
       }
+    } finally {
+      setProcessingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(colorId);
+        return next;
+      });
     }
   };
 
