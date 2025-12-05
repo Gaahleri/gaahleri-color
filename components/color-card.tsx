@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Heart, ShoppingCart } from "lucide-react";
+import { Plus, Check, ShoppingCart, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface ColorData {
@@ -26,6 +26,7 @@ interface ColorCardProps {
   isSaved?: boolean;
   onCardClick?: (color: ColorData) => void;
   onSaveClick?: (colorId: string, e: React.MouseEvent) => void;
+  onDeleteClick?: (colorId: string, e: React.MouseEvent) => void;
   showActions?: boolean;
 }
 
@@ -49,6 +50,7 @@ export default function ColorCard({
   isSaved = false,
   onCardClick,
   onSaveClick,
+  onDeleteClick,
   showActions = true,
 }: ColorCardProps) {
   const handleBuyClick = (e: React.MouseEvent) => {
@@ -71,21 +73,41 @@ export default function ColorCard({
         <div className="absolute top-2 right-2 flex flex-col gap-1">
           {onSaveClick && (
             <Button
+              variant={isSaved ? "default" : "secondary"}
+              size="icon"
+              className={cn(
+                "h-7 w-7 rounded-full shadow-sm",
+                isSaved && "bg-green-500 hover:bg-green-500 cursor-default"
+              )}
+              onClick={(e) => {
+                if (!isSaved) {
+                  onSaveClick(color.id, e);
+                } else {
+                  e.stopPropagation();
+                }
+              }}
+              disabled={isSaved}
+              aria-label={isSaved ? "Saved to library" : "Add to library"}
+            >
+              {isSaved ? (
+                <Check className="h-3.5 w-3.5 text-white" />
+              ) : (
+                <Plus className="h-3.5 w-3.5" />
+              )}
+            </Button>
+          )}
+          {onDeleteClick && (
+            <Button
               variant="ghost"
               size="icon"
-              className="h-7 w-7 rounded-full shadow-sm"
-              onClick={(e) => onSaveClick(color.id, e)}
-              aria-pressed={isSaved}
-              aria-label={isSaved ? "Remove from library" : "Save to library"}
+              className="h-7 w-7 rounded-full shadow-sm hover:bg-destructive hover:text-destructive-foreground"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDeleteClick(color.id, e);
+              }}
+              aria-label="Remove from library"
             >
-              <Heart
-                className={cn(
-                  "h-3.5 w-3.5 transition-colors",
-                  isSaved
-                    ? "fill-pink-500 text-pink-500"
-                    : "text-muted-foreground hover:text-pink-400"
-                )}
-              />
+              <Trash2 className="h-3.5 w-3.5" />
             </Button>
           )}
           {color.buyLink && (
@@ -130,22 +152,22 @@ export default function ColorCard({
       {/* Bottom Section: Badge and Status (Vertical Stack) */}
       <div className="w-full mt-auto flex flex-col gap-1 items-center min-h-[44px]">
         {color.badge && (
-          <Badge 
+          <Badge
             className="text-xs text-white"
-            style={{ 
+            style={{
               backgroundColor: color.badgeColor || "#6b7280",
-              borderColor: color.badgeColor || "#6b7280"
+              borderColor: color.badgeColor || "#6b7280",
             }}
           >
             {color.badge}
           </Badge>
         )}
         {color.status && (
-          <Badge 
+          <Badge
             className="text-xs capitalize text-white"
-            style={{ 
+            style={{
               backgroundColor: color.statusColor || "#3b82f6",
-              borderColor: color.statusColor || "#3b82f6"
+              borderColor: color.statusColor || "#3b82f6",
             }}
           >
             {color.status.replace("_", " ")}

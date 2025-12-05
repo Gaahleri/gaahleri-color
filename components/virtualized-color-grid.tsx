@@ -26,6 +26,7 @@ interface VirtualizedColorGridProps {
   savedColorIds?: Set<string>;
   onCardClick?: (color: Color) => void;
   onSaveClick?: (colorId: string, e: React.MouseEvent) => void;
+  onDeleteClick?: (colorId: string, e: React.MouseEvent) => void;
   showActions?: boolean;
   className?: string;
 }
@@ -36,6 +37,7 @@ export default function VirtualizedColorGrid({
   savedColorIds = new Set(),
   onCardClick,
   onSaveClick,
+  onDeleteClick,
   showActions = true,
   className = "",
 }: VirtualizedColorGridProps) {
@@ -95,7 +97,11 @@ export default function VirtualizedColorGrid({
   // Show empty state
   if (colors.length === 0) {
     return (
-      <div ref={containerRef} className={className} style={{ minHeight: "400px" }}>
+      <div
+        ref={containerRef}
+        className={className}
+        style={{ minHeight: "400px" }}
+      >
         <div className="flex items-center justify-center h-full">
           <div className="text-muted-foreground">No colors found</div>
         </div>
@@ -118,12 +124,13 @@ export default function VirtualizedColorGrid({
               isSaved={isSaved}
               onCardClick={onCardClick}
               onSaveClick={onSaveClick}
+              onDeleteClick={onDeleteClick}
               showActions={showActions}
             />
           );
         })}
       </div>
-      
+
       {/* Sentinel for intersection observer */}
       {visibleRange.end < colors.length && (
         <div

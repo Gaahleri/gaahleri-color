@@ -16,6 +16,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
@@ -24,16 +34,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Save,
-  Trash2,
-  Loader2,
-  Palette,
-} from "lucide-react";
+import { Save, Trash2, Loader2, Palette } from "lucide-react";
 import mixbox from "mixbox";
 // cn helper not needed here
 import { toast } from "sonner";
-import ColorCard from "@/components/color-card";
 import VirtualizedColorGrid from "@/components/virtualized-color-grid";
 
 interface Series {
@@ -69,8 +73,8 @@ export default function ColorMixer() {
     "/api/colors",
     fetcher,
     {
-      revalidateOnFocus: true,  // 当窗口获得焦点时重新验证
-      dedupingInterval: 5000,    // 5秒内不重复请求
+      revalidateOnFocus: true, // 当窗口获得焦点时重新验证
+      dedupingInterval: 5000, // 5秒内不重复请求
     }
   );
   const { data: series = [], isLoading: seriesLoading } = useSWR<Series[]>(
@@ -82,7 +86,7 @@ export default function ColorMixer() {
     }
   );
   const { data: userRecords = [], mutate: mutateRecords } = useSWR<
-    { colorId: string }[]
+    { id: string; colorId: string }[]
   >("/api/user/colors", fetcher, {
     revalidateOnFocus: false,
     dedupingInterval: 30000,
@@ -104,6 +108,10 @@ export default function ColorMixer() {
   // Filter States
   const [source, setSource] = useState<"catalog" | "library">("catalog");
   const [selectedSeries, setSelectedSeries] = useState<string>("all");
+
+  // Delete confirmation dialog state
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [colorToDelete, setColorToDelete] = useState<Color | null>(null);
 
   // Helper to convert hex to RGB array
   const hexToRgb = (hex: string): [number, number, number] => {
@@ -186,69 +194,101 @@ export default function ColorMixer() {
 
   const [processingIds, setProcessingIds] = useState<Set<string>>(new Set());
 
-  const handleToggleSaveColor = async (colorId: string, e: React.MouseEvent) => {
+  // 只处理添加颜色到库（已保存的颜色在 ColorCard 中显示为禁用状态）
+  const handleSaveColor = async (colorId: string, e: React.MouseEvent) => {
     e.stopPropagation();
+
+    // 如果已保存或正在处理，直接返回
+    if (savedColorIds.has(colorId) || processingIds.has(colorId)) return;
+
+    setProcessingIds((prev) => new Set(prev).add(colorId));
+
+    const previous = userRecords || [];
+    // 乐观更新：先在本地把 colorId 添加到 userRecords
+    const optimistic = [...previous, { id: `temp-${Date.now()}`, colorId }];
+
+    try {
+      mutateRecords(optimistic, false);
+
+      const res = await fetch("/api/user/colors", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ colorId }),
+      });
+
+      if (res.ok) {
+        // 成功：后台重新验证并替换为真实数据
+        await mutateRecords();
+        // Silent success - no toast needed
+      } else {
+        // 失败：回滚并提示错误
+        mutateRecords(previous, false);
+        console.error("Failed to save color, status:", res.status);
+        toast.error("Failed to save color");
+      }
+    } catch (error) {
+      // 回滚并提示错误
+      mutateRecords(previous, false);
+      console.error("Failed to save color:", error);
+      toast.error("Failed to save color");
+    } finally {
+      setProcessingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(colorId);
+        return next;
+      });
+    }
+  };
+
+  // 打开删除确认对话框
+  const handleRemoveColor = (colorId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const color = colors.find((c) => c.id === colorId);
+    if (color) {
+      setColorToDelete(color);
+      setIsDeleteOpen(true);
+    }
+  };
+
+  // 确认删除颜色（乐观更新）
+  const confirmDelete = async () => {
+    if (!colorToDelete) return;
+
+    const colorId = colorToDelete.id;
+    setIsDeleteOpen(false);
+    setColorToDelete(null);
+
     if (processingIds.has(colorId)) return;
 
     setProcessingIds((prev) => new Set(prev).add(colorId));
 
+    const previous = userRecords || [];
+    // 乐观更新：从本地移除
+    const optimistic = previous.filter((r) => r.colorId !== colorId);
+
     try {
-      const previous = userRecords || [];
-      const isSaved = savedColorIds.has(colorId);
+      // 先进行乐观更新
+      await mutateRecords(optimistic, false);
 
-      if (isSaved) {
-        // 乐观更新：从本地移除 colorId
-        const optimistic = previous.filter((r) => r.colorId !== colorId);
-        try {
-          mutateRecords(optimistic, false);
+      const res = await fetch(`/api/user/colors/by-color-id/${colorId}`, {
+        method: "DELETE",
+      });
 
-          const res = await fetch(`/api/user/colors/by-color-id/${colorId}`, {
-            method: "DELETE",
-          });
-
-          if (res.ok || res.status === 404) {
-            await mutateRecords();
-            // Silent success
-          } else {
-            mutateRecords(previous, false);
-            console.error("Failed to remove color, status:", res.status);
-            toast.error("Failed to remove color");
-          }
-        } catch (error) {
-          mutateRecords(previous, false);
-          console.error("Failed to remove color:", error);
-          toast.error("Failed to remove color");
-        }
+      if (res.ok || res.status === 404) {
+        // 成功：不需要重新验证，保持乐观更新的状态
+        // 使用 optimistic 数据并设置 revalidate: false
+        await mutateRecords(optimistic, false);
       } else {
-        // 乐观更新：先在本地把 colorId 添加到 userRecords，失败时回滚并提示
-        const optimistic = [...previous, { colorId }];
-        try {
-          // Apply optimistic update without revalidation
-          mutateRecords(optimistic, false);
-
-          const res = await fetch("/api/user/colors", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ colorId }),
-          });
-
-          if (res.ok) {
-            // 成功：后台重新验证并替换为真实数据
-            await mutateRecords();
-            // Silent success
-          } else {
-            // 失败：回滚并提示错误
-            mutateRecords(previous, false);
-            console.error("Failed to save color, status:", res.status);
-            toast.error("Failed to save color");
-          }
-        } catch (error) {
-          // 回滚并提示错误
-          mutateRecords(previous, false);
-          console.error("Failed to save color:", error);
-          toast.error("Failed to save color");
-        }
+        // 失败：回滚并提示错误
+        await mutateRecords(previous, false);
+        console.error("Failed to remove color, status:", res.status);
+        toast.error("Failed to remove color");
       }
+    } catch (error) {
+      // 回滚并提示错误
+      await mutateRecords(previous, false);
+      console.error("Failed to remove color:", error);
+      toast.error("Failed to remove color");
     } finally {
       setProcessingIds((prev) => {
         const next = new Set(prev);
@@ -262,7 +302,7 @@ export default function ColorMixer() {
     if (!mixedColor || !recipeName || ingredients.length === 0) return;
 
     setSaving(true);
-    
+
     // 乐观更新：立即关闭对话框并显示成功提示
     const savedName = recipeName;
     const savedDescription = recipeDescription;
@@ -270,7 +310,7 @@ export default function ColorMixer() {
     setRecipeName("");
     setRecipeDescription("");
     toast.success("Recipe saved successfully!");
-    
+
     try {
       const res = await fetch("/api/recipes", {
         method: "POST",
@@ -326,7 +366,7 @@ export default function ColorMixer() {
   };
 
   const filteredColors = getFilteredColors();
-  
+
   // Get selected color IDs for virtual grid
   const selectedColorIds = new Set(ingredients.map((ing) => ing.color.id));
 
@@ -396,7 +436,8 @@ export default function ColorMixer() {
             selectedColorIds={selectedColorIds}
             savedColorIds={savedColorIds}
             onCardClick={addIngredient}
-            onSaveClick={handleToggleSaveColor}
+            onSaveClick={source === "catalog" ? handleSaveColor : undefined}
+            onDeleteClick={source === "library" ? handleRemoveColor : undefined}
             showActions={true}
           />
         </CardContent>
@@ -565,6 +606,29 @@ export default function ColorMixer() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>确认删除</AlertDialogTitle>
+            <AlertDialogDescription>
+              确定要从您的收藏中删除 &quot;{colorToDelete?.name}&quot; 吗？此操作无法撤销。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setColorToDelete(null)}>
+              取消
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              删除
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
