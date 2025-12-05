@@ -55,7 +55,9 @@ interface Color {
   rgb: string;
   buyLink: string | null;
   badge: string | null;
+  badgeColor: string | null;
   status: string | null;
+  statusColor: string | null;
   series: {
     id: string;
     name: string;
