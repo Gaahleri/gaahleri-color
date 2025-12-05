@@ -24,6 +24,20 @@ import {
   X,
 } from "lucide-react";
 
+// Helper to track purchase click (fire-and-forget)
+const trackPurchaseClick = async (colorId: string) => {
+  try {
+    await fetch("/api/purchase-clicks", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ colorId }),
+    });
+  } catch (error) {
+    // Silently fail - this is just tracking
+    console.error("Failed to track purchase click:", error);
+  }
+};
+
 interface ColorMatch {
   id: string;
   name: string;
@@ -282,7 +296,7 @@ export default function ColorAnalyzer() {
           {/* Manual Color Input */}
           <div className="flex gap-2 items-end flex-wrap">
             <div className="flex-1 min-w-[200px] max-w-xs">
-              <Label htmlFor="manual-hex">Or enter color code</Label>
+              <Label htmlFor="manual-hex" className="mb-2">Or enter color code</Label>
               <Input
                 id="manual-hex"
                 type="text"
@@ -441,6 +455,7 @@ export default function ColorAnalyzer() {
                             target="_blank"
                             rel="noopener noreferrer"
                             className="block"
+                            onClick={() => trackPurchaseClick(match.id)}
                           >
                             <Button
                               variant="outline"
@@ -518,6 +533,7 @@ export default function ColorAnalyzer() {
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="text-primary hover:underline"
+                                onClick={() => trackPurchaseClick(color.id)}
                               >
                                 <ShoppingCart className="h-3 w-3" />
                               </a>

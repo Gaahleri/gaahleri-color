@@ -31,6 +31,7 @@ import {
 // Badge removed — not used in this file
 import { Plus, Trash2, Loader2, Palette, ShoppingCart } from "lucide-react";
 import ColorCard from "@/components/color-card";
+import VirtualizedColorGrid from "@/components/virtualized-color-grid";
 import { toast } from "sonner";
 
 // Helper to track purchase click (fire-and-forget)

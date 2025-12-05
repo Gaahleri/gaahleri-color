@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth } from "@/lib/auth";
+import { requireAuthForApi } from "@/lib/auth";
 
 // GET user's saved colors
 export async function GET() {
   try {
-    const userId = await requireAuth();
+    const userId = await requireAuthForApi();
 
     const records = await prisma.userRecord.findMany({
       where: { userId },
@@ -28,6 +28,9 @@ export async function GET() {
     });
   } catch (error) {
     console.error("Error fetching user records:", error);
+    if (error instanceof Error && error.message.includes("Unauthorized")) {
+      return NextResponse.json({ error: error.message }, { status: 401 });
+    }
     return NextResponse.json(
       { error: "Failed to fetch records" },
       { status: 500 }
@@ -38,7 +41,7 @@ export async function GET() {
 // POST add color to user's collection
 export async function POST(req: Request) {
   try {
-    const userId = await requireAuth();
+    const userId = await requireAuthForApi();
 
     const body = await req.json();
     const { colorId, note, isFavorite } = body;
@@ -88,9 +91,13 @@ export async function POST(req: Request) {
     return NextResponse.json(record, { status: 201 });
   } catch (error) {
     console.error("Error saving color:", error);
+    if (error instanceof Error && error.message.includes("Unauthorized")) {
+      return NextResponse.json({ error: error.message }, { status: 401 });
+    }
     return NextResponse.json(
       { error: "Failed to save color" },
       { status: 500 }
     );
   }
 }
+

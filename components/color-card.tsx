@@ -10,7 +10,9 @@ interface ColorData {
   rgb: string;
   buyLink: string | null;
   badge: string | null;
+  badgeColor: string | null;
   status: string | null;
+  statusColor: string | null;
   series: {
     id: string;
     name: string;
@@ -73,16 +75,15 @@ export default function ColorCard({
               size="icon"
               className="h-7 w-7 rounded-full shadow-sm"
               onClick={(e) => onSaveClick(color.id, e)}
-              disabled={isSaved}
               aria-pressed={isSaved}
-              aria-label={isSaved ? "Saved" : "Save to library"}
+              aria-label={isSaved ? "Remove from library" : "Save to library"}
             >
               <Heart
                 className={cn(
-                  "h-3.5 w-3.5",
+                  "h-3.5 w-3.5 transition-colors",
                   isSaved
                     ? "fill-pink-500 text-pink-500"
-                    : "text-muted-foreground"
+                    : "text-muted-foreground hover:text-pink-400"
                 )}
               />
             </Button>
@@ -106,10 +107,11 @@ export default function ColorCard({
         </div>
       )}
 
-      {/* Circular Color Swatch */}
+      {/* Circular Color Swatch - Lazy loaded */}
       <div
         className="w-16 h-16 rounded-full shadow-sm mb-3 border"
         style={{ backgroundColor: color.hex }}
+        data-color-id={color.id}
       />
 
       {/* Info */}
@@ -128,12 +130,24 @@ export default function ColorCard({
       {/* Bottom Section: Badge and Status (Vertical Stack) */}
       <div className="w-full mt-auto flex flex-col gap-1 items-center min-h-[44px]">
         {color.badge && (
-          <Badge variant="secondary" className="text-xs">
+          <Badge 
+            className="text-xs text-white"
+            style={{ 
+              backgroundColor: color.badgeColor || "#6b7280",
+              borderColor: color.badgeColor || "#6b7280"
+            }}
+          >
             {color.badge}
           </Badge>
         )}
         {color.status && (
-          <Badge variant="outline" className="text-xs capitalize">
+          <Badge 
+            className="text-xs capitalize text-white"
+            style={{ 
+              backgroundColor: color.statusColor || "#3b82f6",
+              borderColor: color.statusColor || "#3b82f6"
+            }}
+          >
             {color.status.replace("_", " ")}
           </Badge>
         )}

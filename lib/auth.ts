@@ -34,6 +34,18 @@ export async function requireAdmin() {
 }
 
 /**
+ * Require admin access for Server Actions - throws error if not admin
+ */
+export async function requireAdminForAction(): Promise<void> {
+  const isUserAdmin = await isAdmin();
+
+  if (!isUserAdmin) {
+    throw new Error("Unauthorized: Admin access required");
+  }
+}
+
+
+/**
  * Require authentication - redirects to home page if not authenticated
  */
 export async function requireAuth() {
@@ -53,3 +65,18 @@ export async function getCurrentUserId(): Promise<string | null> {
   const { userId } = await auth();
   return userId;
 }
+
+/**
+ * Require authentication for API routes - returns userId or throws error
+ * Use this in API routes instead of requireAuth
+ */
+export async function requireAuthForApi(): Promise<string> {
+  const { userId } = await auth();
+
+  if (!userId) {
+    throw new Error("Unauthorized: Authentication required");
+  }
+
+  return userId;
+}
+

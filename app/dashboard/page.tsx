@@ -40,32 +40,7 @@ export default async function DashboardPage() {
           </TabsContent>
         </Tabs>
 
-        {/* Info Box */}
-        <div className="mt-8 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6">
-          <h3 className="text-lg font-semibold mb-3 text-blue-900 dark:text-blue-100">
-            About Your Library
-          </h3>
-          <ul className="space-y-2 text-blue-800 dark:text-blue-200 text-sm">
-            <li className="flex items-start">
-              <span className="mr-2">•</span>
-              <span>
-                <strong>My Mixed Colors:</strong> All color combinations you&apos;ve
-                created and saved
-              </span>
-            </li>
-            <li className="flex items-start">
-              <span className="mr-2">•</span>
-              <span>
-                <strong>Saved Colors:</strong> Individual Gaahleri colors
-                you&apos;ve saved to your collection
-              </span>
-            </li>
-            <li className="flex items-start">
-              <span className="mr-2">•</span>
-              <span>Your data is private and only visible to you</span>
-            </li>
-          </ul>
-        </div>
+
       </div>
     </div>
   );

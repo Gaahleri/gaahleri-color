@@ -15,8 +15,8 @@ export async function GET() {
 
     return NextResponse.json(colors, {
       headers: {
-        // Cache for 5 minutes on the client, revalidate every 30 seconds on the server
-        'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=300',
+        // 较短的缓存时间以便更快看到管理员更新
+        'Cache-Control': 'public, s-maxage=10, stale-while-revalidate=30',
       },
     });
   } catch (error) {

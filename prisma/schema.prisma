@@ -39,7 +39,9 @@ model Color {
   description String? @db.Text
   buyLink     String? // Link to purchase this specific color
   badge       String? // Badge for the color
+  badgeColor  String? // Background color for badge (hex format)
   status      String? // Status of the color
+  statusColor String? // Background color for status (hex format)
   seriesId    String
   series      Series  @relation(fields: [seriesId], references: [id], onDelete: Cascade)
 
@@ -146,7 +148,7 @@ model PurchaseClick {
   color   Color  @relation(fields: [colorId], references: [id], onDelete: Cascade)
 
   userId String? // Optional: Clerk user ID if logged in, null for anonymous
-  
+
   createdAt DateTime @default(now())
 
   @@index([colorId])

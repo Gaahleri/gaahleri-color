@@ -20,7 +20,8 @@ export async function GET(req: Request) {
 
     return NextResponse.json(colors, {
       headers: {
-        "Cache-Control": "private, s-maxage=10, stale-while-revalidate=60",
+        // 禁用缓存以确保数据实时更新
+        "Cache-Control": "no-store, no-cache, must-revalidate",
       },
     });
   } catch (error) {
@@ -38,8 +39,18 @@ export async function POST(req: Request) {
     await requireAdmin();
 
     const body = await req.json();
-    const { name, hex, rgb, description, buyLink, badge, status, seriesId } =
-      body;
+    const {
+      name,
+      hex,
+      rgb,
+      description,
+      buyLink,
+      badge,
+      badgeColor,
+      status,
+      statusColor,
+      seriesId,
+    } = body;
 
     if (!name || !hex || !rgb || !seriesId) {
       return NextResponse.json(
@@ -56,7 +67,9 @@ export async function POST(req: Request) {
         description: description || null,
         buyLink: buyLink || null,
         badge: badge || null,
+        badgeColor: badgeColor || null,
         status: status || null,
+        statusColor: statusColor || null,
         seriesId,
       },
       include: {
@@ -75,3 +88,4 @@ export async function POST(req: Request) {
     );
   }
 }
+

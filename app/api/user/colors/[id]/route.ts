@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth } from "@/lib/auth";
+import { requireAuthForApi } from "@/lib/auth";
 
 // DELETE remove color from user's collection
 export async function DELETE(
@@ -8,7 +8,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const userId = await requireAuth();
+    const userId = await requireAuthForApi();
     const { id } = await params;
 
     // Verify ownership
@@ -31,6 +31,9 @@ export async function DELETE(
     return NextResponse.json({ message: "Color removed from collection" });
   } catch (error) {
     console.error("Error removing color:", error);
+    if (error instanceof Error && error.message.includes("Unauthorized")) {
+      return NextResponse.json({ error: error.message }, { status: 401 });
+    }
     return NextResponse.json(
       { error: "Failed to remove color" },
       { status: 500 }
@@ -44,7 +47,7 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const userId = await requireAuth();
+    const userId = await requireAuthForApi();
     const { id } = await params;
     const body = await req.json();
 
@@ -82,9 +85,13 @@ export async function PUT(
     return NextResponse.json(updated);
   } catch (error) {
     console.error("Error updating record:", error);
+    if (error instanceof Error && error.message.includes("Unauthorized")) {
+      return NextResponse.json({ error: error.message }, { status: 401 });
+    }
     return NextResponse.json(
       { error: "Failed to update record" },
       { status: 500 }
     );
   }
 }
+

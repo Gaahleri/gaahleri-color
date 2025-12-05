@@ -11,9 +11,20 @@ function colorDistance(rgb1: number[], rgb2: number[]): number {
   );
 }
 
-// Parse RGB string "R,G,B" to array [R, G, B]
+// Parse RGB string "R,G,B" or "R，G，B" to array [R, G, B]
 function parseRgb(rgbString: string): number[] {
-  return rgbString.split(",").map((s) => parseInt(s.trim(), 10));
+  // 处理各种分隔符：英文逗号、中文逗号、空格
+  const parts = rgbString.split(/[,，\s]+/).map((s) => parseInt(s.trim(), 10));
+  // 确保返回有效的 RGB 值
+  if (parts.length >= 3 && !parts.slice(0, 3).some(isNaN)) {
+    return [
+      Math.max(0, Math.min(255, parts[0])),
+      Math.max(0, Math.min(255, parts[1])),
+      Math.max(0, Math.min(255, parts[2])),
+    ];
+  }
+  // 默认返回黑色
+  return [0, 0, 0];
 }
 
 interface Color {
@@ -36,20 +47,33 @@ interface MixResult {
 // Mix colors using mixbox and return the result
 function mixColors(colors: { rgb: number[]; parts: number }[]): number[] {
   const totalParts = colors.reduce((sum, c) => sum + c.parts, 0);
+  if (totalParts === 0) return [0, 0, 0];
 
   const z_mix = [0, 0, 0, 0, 0, 0, 0];
 
   for (const { rgb, parts } of colors) {
     const ratio = parts / totalParts;
-    const z = mixbox.rgbToLatent(rgb as [number, number, number]);
-    for (let i = 0; i < z_mix.length; i++) {
-      z_mix[i] += z[i] * ratio;
+    try {
+      const z = mixbox.rgbToLatent(rgb as [number, number, number]);
+      if (z && z.length === 7) {
+        for (let i = 0; i < z_mix.length; i++) {
+          z_mix[i] += z[i] * ratio;
+        }
+      }
+    } catch (e) {
+      console.error("Error in rgbToLatent:", e, "rgb:", rgb);
     }
   }
 
-  return mixbox.latentToRgb(
-    z_mix as [number, number, number, number, number, number, number]
-  );
+  try {
+    const result = mixbox.latentToRgb(
+      z_mix as [number, number, number, number, number, number, number]
+    );
+    return result || [0, 0, 0];
+  } catch (e) {
+    console.error("Error in latentToRgb:", e);
+    return [0, 0, 0];
+  }
 }
 
 export async function POST(request: NextRequest) {

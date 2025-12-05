@@ -29,13 +29,12 @@ import {
   Trash2,
   Loader2,
   Palette,
-  ChevronLeft,
-  ChevronRight,
 } from "lucide-react";
 import mixbox from "mixbox";
 // cn helper not needed here
 import { toast } from "sonner";
 import ColorCard from "@/components/color-card";
+import VirtualizedColorGrid from "@/components/virtualized-color-grid";
 
 interface Series {
   id: string;
@@ -49,7 +48,9 @@ interface Color {
   rgb: string;
   buyLink: string | null;
   badge: string | null;
+  badgeColor: string | null;
   status: string | null;
+  statusColor: string | null;
   series: {
     id: string;
     name: string;
@@ -62,16 +63,14 @@ interface MixIngredient {
   parts: number;
 }
 
-const ITEMS_PER_PAGE = 24;
-
 export default function ColorMixer() {
   // 使用 SWR 进行数据缓存
   const { data: colors = [], isLoading: colorsLoading } = useSWR<Color[]>(
     "/api/colors",
     fetcher,
     {
-      revalidateOnFocus: false,
-      dedupingInterval: 30000,
+      revalidateOnFocus: true,  // 当窗口获得焦点时重新验证
+      dedupingInterval: 5000,    // 5秒内不重复请求
     }
   );
   const { data: series = [], isLoading: seriesLoading } = useSWR<Series[]>(
@@ -102,10 +101,9 @@ export default function ColorMixer() {
   const [recipeName, setRecipeName] = useState("");
   const [recipeDescription, setRecipeDescription] = useState("");
 
-  // Filter & Pagination States
+  // Filter States
   const [source, setSource] = useState<"catalog" | "library">("catalog");
   const [selectedSeries, setSelectedSeries] = useState<string>("all");
-  const [currentPage, setCurrentPage] = useState(1);
 
   // Helper to convert hex to RGB array
   const hexToRgb = (hex: string): [number, number, number] => {
@@ -186,36 +184,63 @@ export default function ColorMixer() {
     setIngredients(ingredients.filter((ing) => ing.color.id !== colorId));
   };
 
-  const handleSaveColor = async (colorId: string, e: React.MouseEvent) => {
+  const handleToggleSaveColor = async (colorId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (savedColorIds.has(colorId)) return;
-    // 乐观更新：先在本地把 colorId 添加到 userRecords，失败时回滚并提示
     const previous = userRecords || [];
-    const optimistic = [...previous, { colorId }];
-    try {
-      // Apply optimistic update without revalidation
-      mutateRecords(optimistic, false);
+    const isSaved = savedColorIds.has(colorId);
 
-      const res = await fetch("/api/user/colors", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ colorId }),
-      });
+    if (isSaved) {
+      // 乐观更新：从本地移除 colorId
+      const optimistic = previous.filter((r) => r.colorId !== colorId);
+      try {
+        mutateRecords(optimistic, false);
 
-      if (res.ok) {
-        // 成功：后台重新验证并替换为真实数据 (不需要提示成功)
-        await mutateRecords();
-      } else {
-        // 失败：回滚并提示错误
+        const res = await fetch(`/api/user/colors/by-color-id/${colorId}`, {
+          method: "DELETE",
+        });
+
+        if (res.ok) {
+          await mutateRecords();
+          toast.success("Color removed from library");
+        } else {
+          mutateRecords(previous, false);
+          console.error("Failed to remove color, status:", res.status);
+          toast.error("Failed to remove color");
+        }
+      } catch (error) {
         mutateRecords(previous, false);
-        console.error("Failed to save color, status:", res.status);
+        console.error("Failed to remove color:", error);
+        toast.error("Failed to remove color");
+      }
+    } else {
+      // 乐观更新：先在本地把 colorId 添加到 userRecords，失败时回滚并提示
+      const optimistic = [...previous, { colorId }];
+      try {
+        // Apply optimistic update without revalidation
+        mutateRecords(optimistic, false);
+
+        const res = await fetch("/api/user/colors", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ colorId }),
+        });
+
+        if (res.ok) {
+          // 成功：后台重新验证并替换为真实数据
+          await mutateRecords();
+          toast.success("Color added to library");
+        } else {
+          // 失败：回滚并提示错误
+          mutateRecords(previous, false);
+          console.error("Failed to save color, status:", res.status);
+          toast.error("Failed to save color");
+        }
+      } catch (error) {
+        // 回滚并提示错误
+        mutateRecords(previous, false);
+        console.error("Failed to save color:", error);
         toast.error("Failed to save color");
       }
-    } catch (error) {
-      // 回滚并提示错误
-      mutateRecords(previous, false);
-      console.error("Failed to save color:", error);
-      toast.error("Failed to save color");
     }
   };
 
@@ -223,13 +248,22 @@ export default function ColorMixer() {
     if (!mixedColor || !recipeName || ingredients.length === 0) return;
 
     setSaving(true);
+    
+    // 乐观更新：立即关闭对话框并显示成功提示
+    const savedName = recipeName;
+    const savedDescription = recipeDescription;
+    setIsSaveOpen(false);
+    setRecipeName("");
+    setRecipeDescription("");
+    toast.success("Recipe saved successfully!");
+    
     try {
       const res = await fetch("/api/recipes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name: recipeName,
-          description: recipeDescription || null,
+          name: savedName,
+          description: savedDescription || null,
           resultHex: mixedColor.hex,
           resultRgb: mixedColor.rgb,
           ingredients: ingredients.map((ing) => ({
@@ -239,15 +273,13 @@ export default function ColorMixer() {
         }),
       });
 
-      if (res.ok) {
-        setIsSaveOpen(false);
-        setRecipeName("");
-        setRecipeDescription("");
-        toast.success("Recipe saved successfully!");
+      if (!res.ok) {
+        // 失败时回滚并提示
+        toast.error("Failed to save recipe. Please try again.");
       }
     } catch (error) {
       console.error("Failed to save recipe:", error);
-      toast.error("Failed to save recipe");
+      toast.error("Failed to save recipe. Please try again.");
     } finally {
       setSaving(false);
     }
@@ -280,16 +312,9 @@ export default function ColorMixer() {
   };
 
   const filteredColors = getFilteredColors();
-  const totalPages = Math.ceil(filteredColors.length / ITEMS_PER_PAGE);
-  const paginatedColors = filteredColors.slice(
-    (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE
-  );
-
-  // Reset page when filters change
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [source, selectedSeries]);
+  
+  // Get selected color IDs for virtual grid
+  const selectedColorIds = new Set(ingredients.map((ing) => ing.color.id));
 
   if (loading) {
     return (
@@ -352,60 +377,15 @@ export default function ColorMixer() {
         </CardHeader>
 
         <CardContent className="flex-1 overflow-y-auto min-h-0 max-h-[50vh] lg:max-h-none">
-          {paginatedColors.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center text-muted-foreground py-8">
-              <p>No colors found matching your filters.</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 pb-4">
-              {paginatedColors.map((color) => {
-                const isSelected = ingredients.some(
-                  (ing) => ing.color.id === color.id
-                );
-                const isSaved = savedColorIds.has(color.id);
-
-                return (
-                  <ColorCard
-                    key={color.id}
-                    color={color}
-                    isSelected={isSelected}
-                    isSaved={isSaved}
-                    onCardClick={addIngredient}
-                    onSaveClick={handleSaveColor}
-                    showActions={true}
-                  />
-                );
-              })}
-            </div>
-          )}
+          <VirtualizedColorGrid
+            colors={filteredColors}
+            selectedColorIds={selectedColorIds}
+            savedColorIds={savedColorIds}
+            onCardClick={addIngredient}
+            onSaveClick={handleToggleSaveColor}
+            showActions={true}
+          />
         </CardContent>
-
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="p-4 border-t flex items-center justify-between bg-card">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-            >
-              <ChevronLeft className="h-4 w-4 mr-1" />
-              Prev
-            </Button>
-            <span className="text-sm text-muted-foreground">
-              Page {currentPage} of {totalPages}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages}
-            >
-              Next
-              <ChevronRight className="h-4 w-4 ml-1" />
-            </Button>
-          </div>
-        )}
       </Card>
 
       {/* Right: Mixing Area */}

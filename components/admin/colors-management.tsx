@@ -66,7 +66,9 @@ interface Color {
   description: string | null;
   buyLink: string | null;
   badge: string | null;
+  badgeColor: string | null;
   status: string | null;
+  statusColor: string | null;
   seriesId: string;
   series: Series;
 }
@@ -78,8 +80,8 @@ export default function ColorsManagement() {
     isLoading: colorsLoading,
     mutate: mutateColors,
   } = useSWR<Color[]>("/api/admin/colors", fetcher, {
-    revalidateOnFocus: false,
-    dedupingInterval: 30000,
+    revalidateOnFocus: true,
+    dedupingInterval: 2000,  // 2秒内不重复请求
   });
   const { data: series = [], isLoading: seriesLoading } = useSWR<Series[]>(
     "/api/series",
@@ -105,7 +107,9 @@ export default function ColorsManagement() {
     description: "",
     buyLink: "",
     badge: "",
+    badgeColor: "",
     status: "",
+    statusColor: "",
     seriesId: "",
   });
 
@@ -187,7 +191,9 @@ export default function ColorsManagement() {
       description: "",
       buyLink: "",
       badge: "",
+      badgeColor: "",
       status: "",
+      statusColor: "",
       seriesId: "",
     });
   };
@@ -201,7 +207,9 @@ export default function ColorsManagement() {
       description: color.description || "",
       buyLink: color.buyLink || "",
       badge: color.badge || "",
+      badgeColor: color.badgeColor || "",
       status: color.status || "",
+      statusColor: color.statusColor || "",
       seriesId: color.seriesId,
     });
     setIsEditOpen(true);
@@ -327,22 +335,77 @@ export default function ColorsManagement() {
                   />
                 </div>
                 <div className="space-y-2">
+                  <Label htmlFor="badgeColor">Badge Color (Optional)</Label>
+                  <div className="flex gap-2">
+                    <div
+                      className="w-10 h-10 rounded border shrink-0"
+                      style={{
+                        backgroundColor: /^#[0-9A-Fa-f]{6}$/.test(formData.badgeColor)
+                          ? formData.badgeColor
+                          : "#6b7280",
+                      }}
+                    />
+                    <Input
+                      id="badgeColor"
+                      value={formData.badgeColor}
+                      onChange={(e) =>
+                        setFormData({ ...formData, badgeColor: e.target.value.toUpperCase() })
+                      }
+                      placeholder="#6B7280"
+                      className="font-mono"
+                    />
+                    <Input
+                      type="color"
+                      value={/^#[0-9A-Fa-f]{6}$/.test(formData.badgeColor) ? formData.badgeColor : "#6b7280"}
+                      onChange={(e) =>
+                        setFormData({ ...formData, badgeColor: e.target.value.toUpperCase() })
+                      }
+                      className="w-10 h-10 p-1 cursor-pointer shrink-0"
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
                   <Label htmlFor="status">Status (Optional)</Label>
-                  <Select
+                  <Input
+                    id="status"
                     value={formData.status}
-                    onValueChange={(val) =>
-                      setFormData({ ...formData, status: val })
+                    onChange={(e) =>
+                      setFormData({ ...formData, status: e.target.value })
                     }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="available">Available</SelectItem>
-                      <SelectItem value="out_of_stock">Out of Stock</SelectItem>
-                      <SelectItem value="discontinued">Discontinued</SelectItem>
-                    </SelectContent>
-                  </Select>
+                    placeholder="e.g., Available, Out of Stock"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="statusColor">Status Color (Optional)</Label>
+                  <div className="flex gap-2">
+                    <div
+                      className="w-10 h-10 rounded border shrink-0"
+                      style={{
+                        backgroundColor: /^#[0-9A-Fa-f]{6}$/.test(formData.statusColor)
+                          ? formData.statusColor
+                          : "#3b82f6",
+                      }}
+                    />
+                    <Input
+                      id="statusColor"
+                      value={formData.statusColor}
+                      onChange={(e) =>
+                        setFormData({ ...formData, statusColor: e.target.value.toUpperCase() })
+                      }
+                      placeholder="#3B82F6"
+                      className="font-mono"
+                    />
+                    <Input
+                      type="color"
+                      value={/^#[0-9A-Fa-f]{6}$/.test(formData.statusColor) ? formData.statusColor : "#3b82f6"}
+                      onChange={(e) =>
+                        setFormData({ ...formData, statusColor: e.target.value.toUpperCase() })
+                      }
+                      className="w-10 h-10 p-1 cursor-pointer shrink-0"
+                    />
+                  </div>
                 </div>
               </div>
               <div className="space-y-2">
@@ -541,22 +604,77 @@ export default function ColorsManagement() {
                 />
               </div>
               <div className="space-y-2">
+                <Label htmlFor="edit-badgeColor">Badge Color (Optional)</Label>
+                <div className="flex gap-2">
+                  <div
+                    className="w-10 h-10 rounded border shrink-0"
+                    style={{
+                      backgroundColor: /^#[0-9A-Fa-f]{6}$/.test(formData.badgeColor)
+                        ? formData.badgeColor
+                        : "#6b7280",
+                    }}
+                  />
+                  <Input
+                    id="edit-badgeColor"
+                    value={formData.badgeColor}
+                    onChange={(e) =>
+                      setFormData({ ...formData, badgeColor: e.target.value.toUpperCase() })
+                    }
+                    placeholder="#6B7280"
+                    className="font-mono"
+                  />
+                  <Input
+                    type="color"
+                    value={/^#[0-9A-Fa-f]{6}$/.test(formData.badgeColor) ? formData.badgeColor : "#6b7280"}
+                    onChange={(e) =>
+                      setFormData({ ...formData, badgeColor: e.target.value.toUpperCase() })
+                    }
+                    className="w-10 h-10 p-1 cursor-pointer shrink-0"
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
                 <Label htmlFor="edit-status">Status (Optional)</Label>
-                <Select
+                <Input
+                  id="edit-status"
                   value={formData.status}
-                  onValueChange={(val) =>
-                    setFormData({ ...formData, status: val })
+                  onChange={(e) =>
+                    setFormData({ ...formData, status: e.target.value })
                   }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="available">Available</SelectItem>
-                    <SelectItem value="out_of_stock">Out of Stock</SelectItem>
-                    <SelectItem value="discontinued">Discontinued</SelectItem>
-                  </SelectContent>
-                </Select>
+                  placeholder="e.g., Available, Out of Stock"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-statusColor">Status Color (Optional)</Label>
+                <div className="flex gap-2">
+                  <div
+                    className="w-10 h-10 rounded border shrink-0"
+                    style={{
+                      backgroundColor: /^#[0-9A-Fa-f]{6}$/.test(formData.statusColor)
+                        ? formData.statusColor
+                        : "#3b82f6",
+                    }}
+                  />
+                  <Input
+                    id="edit-statusColor"
+                    value={formData.statusColor}
+                    onChange={(e) =>
+                      setFormData({ ...formData, statusColor: e.target.value.toUpperCase() })
+                    }
+                    placeholder="#3B82F6"
+                    className="font-mono"
+                  />
+                  <Input
+                    type="color"
+                    value={/^#[0-9A-Fa-f]{6}$/.test(formData.statusColor) ? formData.statusColor : "#3b82f6"}
+                    onChange={(e) =>
+                      setFormData({ ...formData, statusColor: e.target.value.toUpperCase() })
+                    }
+                    className="w-10 h-10 p-1 cursor-pointer shrink-0"
+                  />
+                </div>
               </div>
             </div>
             <div className="space-y-2">
