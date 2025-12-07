@@ -2,21 +2,30 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
 
-// GET top 10 most added colors in the last month
+// GET top 10 most added colors for selected month
 export async function GET(request: NextRequest) {
   try {
     await requireAdmin();
 
     const { searchParams } = new URL(request.url);
     const country = searchParams.get("country");
+    const yearParam = searchParams.get("year");
+    const monthParam = searchParams.get("month");
 
-    const oneMonthAgo = new Date();
-    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+    // Default to current year and month
+    const now = new Date();
+    const year = yearParam ? parseInt(yearParam) : now.getFullYear();
+    const month = monthParam ? parseInt(monthParam) : now.getMonth() + 1;
+
+    // Calculate date range for the selected month
+    const startDate = new Date(year, month - 1, 1);
+    const endDate = new Date(year, month, 0, 23, 59, 59, 999); // Last day of the month
 
     // Build where clause
     const whereClause: any = {
       createdAt: {
-        gte: oneMonthAgo,
+        gte: startDate,
+        lte: endDate,
       },
     };
 

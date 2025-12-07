@@ -37,12 +37,32 @@ interface TopColorsData {
   availableCountries: string[];
 }
 
+const MONTH_NAMES = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+];
+
 export default function TopColorsStats() {
+  const currentYear = new Date().getFullYear();
+  const currentMonth = new Date().getMonth() + 1;
+
+  const [selectedYear, setSelectedYear] = useState(currentYear);
+  const [selectedMonth, setSelectedMonth] = useState(currentMonth);
   const [selectedCountry, setSelectedCountry] = useState<string>("all");
 
   // 使用 SWR 进行数据缓存
   const { data, isLoading: loading } = useSWR<TopColorsData>(
-    `/api/admin/stats/top-colors?country=${selectedCountry}`,
+    `/api/admin/stats/top-colors?year=${selectedYear}&month=${selectedMonth}&country=${selectedCountry}`,
     fetcher,
     {
       revalidateOnFocus: false,
@@ -52,13 +72,19 @@ export default function TopColorsStats() {
 
   const topColors = data?.topColors || [];
 
+  const handleMonthChange = (value: string) => {
+    const [year, month] = value.split("-").map(Number);
+    setSelectedYear(year);
+    setSelectedMonth(month);
+  };
+
   if (loading) {
     return (
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <TrendingUp className="h-5 w-5" />
-            Top 10 Colors (Last 30 Days)
+            Top 10 Most Saved Colors
           </CardTitle>
         </CardHeader>
         <CardContent className="flex items-center justify-center p-8">
@@ -68,6 +94,18 @@ export default function TopColorsStats() {
     );
   }
 
+  // Generate month options for the last 12 months
+  const monthOptions: { value: string; label: string }[] = [];
+  for (let i = 0; i < 12; i++) {
+    const date = new Date(currentYear, currentMonth - 1 - i, 1);
+    const year = date.getFullYear();
+    const month = date.getMonth() + 1;
+    monthOptions.push({
+      value: `${year}-${month}`,
+      label: `${MONTH_NAMES[month - 1]} ${year}`,
+    });
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -75,28 +113,42 @@ export default function TopColorsStats() {
           <div>
             <CardTitle className="flex items-center gap-2">
               <TrendingUp className="h-5 w-5" />
-              Top 10 Colors (Last 30 Days)
+              Top 10 Most Saved Colors
             </CardTitle>
             <CardDescription>
-              Most saved colors by users in the past month
+              Most saved colors by users for selected month
             </CardDescription>
           </div>
-          <Select
-            value={selectedCountry}
-            onValueChange={setSelectedCountry}
-          >
-            <SelectTrigger className="w-[150px]">
-              <SelectValue placeholder="All Countries" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Countries</SelectItem>
-              {data?.availableCountries?.map((country) => (
-                <SelectItem key={country} value={country}>
-                  {country}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex gap-2">
+            <Select value={selectedCountry} onValueChange={setSelectedCountry}>
+              <SelectTrigger className="w-[150px]">
+                <SelectValue placeholder="All Countries" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Countries</SelectItem>
+                {data?.availableCountries?.map((country) => (
+                  <SelectItem key={country} value={country}>
+                    {country}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select
+              value={`${selectedYear}-${selectedMonth}`}
+              onValueChange={handleMonthChange}
+            >
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Select month" />
+              </SelectTrigger>
+              <SelectContent>
+                {monthOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </CardHeader>
       <CardContent>
