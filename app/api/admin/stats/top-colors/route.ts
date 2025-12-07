@@ -88,14 +88,17 @@ export async function GET(request: NextRequest) {
       .filter(Boolean)
       .sort();
 
-    return NextResponse.json({
-      topColors: result,
-      availableCountries: countries,
-    }, {
-      headers: {
-        "Cache-Control": "private, max-age=60, stale-while-revalidate=300",
+    return NextResponse.json(
+      {
+        topColors: result,
+        availableCountries: countries,
       },
-    });
+      {
+        headers: {
+          "Cache-Control": "private, max-age=60, stale-while-revalidate=300",
+        },
+      }
+    );
   } catch (error) {
     console.error("Error fetching stats:", error);
     return NextResponse.json(

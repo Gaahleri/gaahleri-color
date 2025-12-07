@@ -7,12 +7,14 @@
 ### 1. 新增功能
 
 #### 时间筛选
+
 - 支持按月份筛选数据
 - 默认显示当前月份
 - 提供最近 12 个月的选项
 - 月份格式：`January 2024`, `February 2024` 等
 
 #### 国家/地区筛选
+
 - 支持按国家筛选数据
 - 默认显示所有国家 (`All Countries`)
 - 国家数据来自 Vercel 的 `x-vercel-ip-country` header
@@ -21,21 +23,27 @@
 ### 2. 修改的文件
 
 #### 前端组件
+
 **`components/admin/top-colors-stats.tsx`**
+
 - 添加了 `selectedYear` 和 `selectedMonth` 状态
 - 添加了时间筛选下拉菜单
 - 更新 API 调用以包含年份和月份参数
 - 更新标题和描述文案
 
 #### 后端 API
+
 **`app/api/admin/stats/top-colors/route.ts`**
+
 - 添加 `year` 和 `month` 查询参数支持
 - 修改日期查询逻辑为按月份筛选
 - 计算指定月份的开始和结束日期
 - 返回该月份内的 Top 10 颜色
 
 #### 数据库优化
+
 **`prisma/schema.prisma`**
+
 - 为 `User` 表的 `country` 字段添加索引
 - 提升按国家筛选的查询性能
 
@@ -111,6 +119,7 @@ GET /api/admin/stats/top-colors?year=2024&month=12&country=US
 ## 实现细节
 
 ### 月份选项生成
+
 ```typescript
 // 生成最近 12 个月的选项
 const monthOptions: { value: string; label: string }[] = [];
@@ -126,6 +135,7 @@ for (let i = 0; i < 12; i++) {
 ```
 
 ### 日期范围计算
+
 ```typescript
 // 月份第一天和最后一天
 const startDate = new Date(year, month - 1, 1);
@@ -139,6 +149,7 @@ createdAt: {
 ```
 
 ### 国家筛选
+
 ```typescript
 // 仅当选择了特定国家时添加筛选条件
 if (country && country !== "all") {
