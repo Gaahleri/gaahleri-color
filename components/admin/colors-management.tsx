@@ -723,7 +723,7 @@ export default function ColorsManagement() {
       <AlertDialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <DialogTitle>Are you sure?</DialogTitle>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
               This action cannot be undone. This will permanently delete the
               color &quot;{selectedColor?.name}&quot; and remove it from our
