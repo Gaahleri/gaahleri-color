@@ -53,6 +53,39 @@ export async function POST(req: Request) {
       );
     }
 
+    // Ensure user exists in database (auto-create if not)
+    let user = await prisma.user.findUnique({
+      where: { clerkId: userId },
+    });
+
+    if (!user) {
+      // Get user details from Clerk
+      const { auth, clerkClient } = await import("@clerk/nextjs/server");
+      const { userId: clerkUserId } = await auth();
+      if (!clerkUserId) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
+
+      const client = await clerkClient();
+      const clerkUser = await client.users.getUser(clerkUserId);
+
+      // Get country from Vercel header
+      const country = req.headers.get("x-vercel-ip-country") || null;
+
+      // Create user in database
+      user = await prisma.user.create({
+        data: {
+          clerkId: clerkUserId,
+          email: clerkUser.emailAddresses[0]?.emailAddress || "",
+          name: clerkUser.firstName
+            ? `${clerkUser.firstName} ${clerkUser.lastName || ""}`.trim()
+            : null,
+          imageUrl: clerkUser.imageUrl || null,
+          country: country,
+        },
+      });
+    }
+
     // Check if already saved
     const existing = await prisma.userRecord.findUnique({
       where: {

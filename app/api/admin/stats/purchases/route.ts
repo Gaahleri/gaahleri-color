@@ -22,7 +22,10 @@ export async function GET(request: NextRequest) {
     const endDate = new Date(year, month, 0, 23, 59, 59, 999);
 
     // Build where clause
-    const whereClause: any = {
+    const whereClause: {
+      createdAt: { gte: Date; lte: Date };
+      country?: string;
+    } = {
       createdAt: {
         gte: startDate,
         lte: endDate,

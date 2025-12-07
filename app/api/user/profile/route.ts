@@ -4,7 +4,7 @@ import { requireAuth } from "@/lib/auth";
 import { auth, clerkClient } from "@clerk/nextjs/server";
 
 // GET user profile
-export async function GET() {
+export async function GET(req: Request) {
   try {
     const userId = await requireAuth();
 
@@ -23,6 +23,9 @@ export async function GET() {
       const client = await clerkClient();
       const clerkUser = await client.users.getUser(clerkUserId);
 
+      // Get country from Vercel header if available
+      const country = req.headers.get("x-vercel-ip-country") || null;
+
       user = await prisma.user.create({
         data: {
           clerkId: clerkUserId,
@@ -31,6 +34,7 @@ export async function GET() {
             ? `${clerkUser.firstName} ${clerkUser.lastName || ""}`.trim()
             : null,
           imageUrl: clerkUser.imageUrl || null,
+          country: country,
         },
       });
     }
