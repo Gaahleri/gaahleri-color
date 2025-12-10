@@ -454,7 +454,7 @@ export default function ColorMixer() {
             {ingredients.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center text-muted-foreground p-4">
                 <Palette className="h-12 w-12 mb-4 opacity-20" />
-                <p>Select colors from the left to start mixing</p>
+                <p>Select colors to start mixing</p>
               </div>
             ) : (
               <div className="space-y-6">
@@ -483,7 +483,7 @@ export default function ColorMixer() {
                       <Slider
                         value={[ing.parts]}
                         min={1}
-                        max={10}
+                        max={100}
                         step={1}
                         onValueChange={(val: number[]) =>
                           updateParts(ing.color.id, val)

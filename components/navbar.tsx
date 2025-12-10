@@ -22,6 +22,7 @@ import {
   Menu,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import Image from "next/image";
 
 // 使用 useSyncExternalStore 来安全地检测客户端
 const emptySubscribe = () => () => {};
@@ -105,8 +106,22 @@ export default function Navbar() {
             "flex-1 md:flex-none justify-center md:justify-start" // Mobile: centered
           )}
         >
-          <Palette className="h-6 w-6 text-primary" />
-          <span className="font-bold text-xl">Gaahleri</span>
+          <div className="relative w-[100px] h-[30px]">
+            <Image
+              src="/logo-light.png"
+              alt="Logo"
+              fill
+              className="object-contain block dark:hidden"
+              priority
+            />
+            <Image
+              src="/logo-dark.png"
+              alt="Logo"
+              fill
+              className="object-contain hidden dark:block"
+              priority
+            />
+          </div>
         </Link>
 
         {/* Desktop Navigation Links */}

@@ -1,6 +1,6 @@
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
-
+// 对管理员的身份验证
 /**
  * Check if the current user is an admin
  * Returns true if user has "admin" role in their publicMetadata
@@ -44,10 +44,11 @@ export async function requireAdminForAction(): Promise<void> {
   }
 }
 
-
+// 检查用户是否登陆/对用户的身份验证
 /**
  * Require authentication - redirects to home page if not authenticated
  */
+// 用户登陆后才能执行后续代码
 export async function requireAuth() {
   const { userId } = await auth();
 
@@ -79,4 +80,3 @@ export async function requireAuthForApi(): Promise<string> {
 
   return userId;
 }
-
